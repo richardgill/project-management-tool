@@ -192,12 +192,16 @@ const averageResource = (resources: Resource[]) => {
 }
 
 console.log('starting prototype')
-
+// Users
 const eoin = new User('enugent', 'Eoin')
+
+// Resources
 const yaw = new Resource('Yaw', { [EstimateUnit.DAYS]: 0.4, [EstimateUnit.STORY_POINTS]: 1 })
 const richard = new Resource('Richard', { [EstimateUnit.DAYS]: 0.8, [EstimateUnit.STORY_POINTS]: 2 })
 
 const fallbackResource = averageResource([yaw, richard])
+
+// Tree
 
 const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, 2, EstimateUnit.DAYS, yaw, 'Klarna Payments')
 const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, 2, EstimateUnit.DAYS, richard, 'Klarna Payments')
