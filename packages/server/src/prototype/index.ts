@@ -209,7 +209,7 @@ const fallbackResource = averageResource([yaw, richard])
 const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, 2, EstimateUnit.DAYS, yaw, 10)
 const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, 2, EstimateUnit.DAYS, yaw)
 const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, 2, EstimateUnit.DAYS, richard)
-const finishTheDocs = new TaskNode('Complete docs', eoin, [connectDocs, paymentIntentDocs])
+const finishTheDocs = new TaskNode('Complete docs', eoin, [upeDocs, connectDocs, paymentIntentDocs])
 
 const checkoutDogfooding = new Task('Checkout Dogfooding', Status.NOT_STARTED, 2, EstimateUnit.DAYS, richard)
 const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, 2, EstimateUnit.STORY_POINTS, richard)
@@ -220,11 +220,19 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 
 // Prioritization
 // Resource priotization
+// Global ticket prioritization?
+
+// How to handle unassigned tasks?
+// Fallback to average team (team is input)
+
 // Resource availability
 // calendar?
 // how many days off per month / 6 months / year???
 
 // How to handle 'lead times' / parallelization?
 // End date???
+
+// Overall contingency?
+// contingency on mid level nodes?
 
 console.log(JSON.stringify(root.calculate(fallbackResource, [Status.DONE]), null, 2))
