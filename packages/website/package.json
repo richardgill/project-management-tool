@@ -1,0 +1,113 @@
+{
+  "name": "recipes-website",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "EXTEND_ESLINT=true react-app-rewired build",
+    "check:node": "check-node-version --package",
+    "ci": "CI=TRUE yarn build && CI=TRUE yarn test",
+    "format:js": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md}'",
+    "postinstall": "yarn run check:node",
+    "lint": "CI=TRUE eslint --ext ts,tsx,js,jsx ./src",
+    "precommit": "CI=TRUE lint-staged",
+    "start": "EXTEND_ESLINT=true react-app-rewired start",
+    "test": "react-app-rewired test"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "package.json": [
+      "sort-package-json",
+      "git add"
+    ],
+    "src/**/*.{ts,tsx,js,jsx,json,css,scss,md}": [
+      "prettier --write",
+      "git add"
+    ],
+    "src/**/*.{ts,tsx,js,jsx}": [
+      "eslint --ext ts,tsx,js,jsx",
+      "git add"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "dependencies": {
+    "@apollo/client": "^3.4.15",
+    "@apollo/react-hooks": "^4.0.0",
+    "@material-ui/core": "^4.9.11",
+    "@material-ui/icons": "^4.9.1",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "ace-builds": "^1.4.11",
+    "apollo-boost": "^0.4.9",
+    "check-node-version": "^4.0.1",
+    "firebase": "^7.14.2",
+    "github-markdown-css": "^4.0.0",
+    "graphql": "^14.6.0",
+    "handlebars": "^4.7.6",
+    "history": "^4.10.1",
+    "howler": "^2.1.3",
+    "husky": "^3.0.5",
+    "lint-staged": "^9.2.5",
+    "nosleep.js": "^0.9.0",
+    "pluralize": "^8.0.0",
+    "prettier": "^1.18.2",
+    "react": "^17.0.2",
+    "react-ace": "^8.1.0",
+    "react-app-rewired": "^2.1.8",
+    "react-dom": "^17.0.2",
+    "react-firebaseui": "^4.1.0",
+    "react-helmet": "^6.0.0",
+    "react-markdown": "^4.3.1",
+    "react-router-dom": "^5.3.0",
+    "react-scripts": "3.4.0",
+    "react-split-pane": "^0.1.91",
+    "sort-package-json": "^1.22.1",
+    "styled-components": "^5.1.0",
+    "typeface-roboto": "^0.0.75",
+    "typescript": "^4.4.3",
+    "urijs": "^1.19.2",
+    "uuidv4": "^6.0.8"
+  },
+  "devDependencies": {
+    "@types/history": "^4.7.5",
+    "@types/howler": "^2.1.2",
+    "@types/jest": "^25.2.1",
+    "@types/lodash": "^4.14.150",
+    "@types/node": "^13.13.2",
+    "@types/nosleep.js": "^0.9.0",
+    "@types/pluralize": "^0.0.29",
+    "@types/react": "^17.0.25",
+    "@types/react-dom": "^17.0.9",
+    "@types/react-helmet": "^5.0.15",
+    "@types/react-router-dom": "^5.3.0",
+    "@types/styled-components": "^5.1.0",
+    "@types/urijs": "^1.19.8",
+    "@typescript-eslint/eslint-plugin": "^2.24.0",
+    "apollo": "^2.27.3",
+    "eslint-config-airbnb-typescript": "^7.2.1",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.19.0",
+    "eslint-plugin-react-hooks": "^2.5.0"
+  },
+  "engines": {
+    "node": ">= 16.10 < 17"
+  },
+  "engine-strict": true
+}

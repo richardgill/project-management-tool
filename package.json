@@ -1,0 +1,30 @@
+{
+  "devDependencies": {
+    "@graphql-codegen/cli": "2.2.0",
+    "husky": "^4.2.5",
+    "lerna": "^4.0.0",
+    "@graphql-codegen/typescript": "2.2.2",
+    "@graphql-codegen/typescript-operations": "2.1.5",
+    "@graphql-codegen/typescript-resolvers": "2.2.1",
+    "@graphql-codegen/typescript-react-apollo": "2.2.2",
+    "typescript": "^4.4.3"
+  },
+  "name": "recipes",
+  "scripts": {
+    "build": "yarn lerna bootstrap && (cd packages/website && yarn build) && cp -r packages/website/build packages/server/website && (cd packages/server && yarn build)",
+    "ci": "lerna run ci",
+    "start": "(cd packages/server && yarn start:built)",
+    "graphql:codegen": "rm -rf packages/website/src/generated/* && rm -rf packages/server/src/generated/* && graphql-codegen --config codegen.yml"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lerna run --concurrency 1 --stream precommit --since HEAD"
+    }
+  },
+  "engines": {
+    "node": ">= 16.10 < 17"
+  },
+  "dependencies": {
+    "graphql": "^15.6.0"
+  }
+}

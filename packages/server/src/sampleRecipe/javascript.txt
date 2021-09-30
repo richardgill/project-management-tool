@@ -1,0 +1,36 @@
+const formatUnits = (amount, isFluid) => {
+  return `${_.round(amount, 0)}${isFluid ? 'ml' : 'g'}`
+}
+
+const recipe = options => {
+
+  const ingredients = {
+    butter: {
+      name: 'Butter',
+      amountRelative: 225,
+      isFluid: false
+    },
+    sugar: {
+      name: 'Caster sugar',
+      amountRelative: 110,
+      isFluid: false
+    },
+    flour: {
+      name: 'Plain flour',
+      amountRelative: 275,
+      isFluid: false
+    }
+  }
+
+  return {
+    scale: options.scale,
+    ingredients: _.mapValues(ingredients, ingredient => {
+      const amountAbsolute = formatUnits(ingredient.amountRelative * (options.scale / 100), ingredient.isFluid)
+      return {
+        ...ingredient,
+        amountRelative: formatUnits(ingredient.amountRelative, ingredient.isFluid),
+        amountAbsolute: amountAbsolute
+      }
+    })
+  }
+}
