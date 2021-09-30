@@ -34,14 +34,14 @@ class TaskNode {
     this.description = description
   }
 
-  sumOfEstimates(): { [key in EstimateUnit]: number } {
+  sumOfEstimates(rejectStatuses: Status[]): { [key in EstimateUnit]: number } {
     return {
       [EstimateUnit.DAYS]: _.chain(this.children)
-        .map(n => n.sumOfEstimates()[EstimateUnit.DAYS])
+        .map(n => n.sumOfEstimates(rejectStatuses)[EstimateUnit.DAYS])
         .sum()
         .value(),
       [EstimateUnit.STORY_POINTS]: _.chain(this.children)
-        .map(n => n.sumOfEstimates()[EstimateUnit.STORY_POINTS])
+        .map(n => n.sumOfEstimates(rejectStatuses)[EstimateUnit.STORY_POINTS])
         .sum()
         .value(),
     }
@@ -93,13 +93,14 @@ class TaskNode {
       children: this.children.map(c => c.calculate(fallback, remainingRejectStatuses)),
       taskCount: this.taskCount(),
       unfinishedTaskCount: this.unfinishedTaskCount(),
-      sumOfEstimates: this.sumOfEstimates(),
+      sumOfEstimates: this.sumOfEstimates([]),
+      remainingSumOfEstimates: this.sumOfEstimates(remainingRejectStatuses),
       assignedEstimatedWorkdays: this.assignedEstimatedWorkdays([]),
       unassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(fallback, []),
       totalEstimatedWorkdays: this.totalEstimatedWorkdays(fallback, []),
-      assignedRemainingEstimatedWorkdays: this.assignedEstimatedWorkdays(remainingRejectStatuses),
-      unassignedRemainingEstimatedWorkdays: this.unassignedEstimatedWorkdays(fallback, remainingRejectStatuses),
-      totalRemainingEstimatedWorkdays: this.totalEstimatedWorkdays(fallback, remainingRejectStatuses),
+      remainingAssignedEstimatedWorkdays: this.assignedEstimatedWorkdays(remainingRejectStatuses),
+      remainingUnassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(fallback, remainingRejectStatuses),
+      remainingTotalEstimatedWorkdays: this.totalEstimatedWorkdays(fallback, remainingRejectStatuses),
     }
   }
 }
@@ -150,11 +151,11 @@ class Task {
   }
 
   sumOfEstimates(rejectStatuses: Status[]) {
-    let estimateUnit in EstimateUnit
-    return {
-      [EstimateUnit.DAYS.toString()]: this.estimateUnit === EstimateUnit.DAYS ? this.estimateNumber : 0,
-      [EstimateUnit.STORY_POINTS.toString()]: this.estimateUnit === EstimateUnit.STORY_POINTS ? this.estimateNumber : 0,
+    let result: { [key: string]: number } = {}
+    for (const estimateUnit in EstimateUnit) {
+      result[estimateUnit] = this.estimateUnit === estimateUnit && !rejectStatuses.includes(this.status) ? this.estimateNumber : 0
     }
+    return result
   }
 
   isFinished(): boolean {
