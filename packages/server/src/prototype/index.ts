@@ -123,15 +123,17 @@ class Task {
   description?: string
   status: Status
   estimateNumber: number // e.g 7
+  elapsedEstimate?: number // e.g 7
   estimateUnit: EstimateUnit // e.g. story points
   assignee?: Resource
 
-  constructor(title: string, status: Status, estimateNumber: number, estimateUnit: EstimateUnit, assignee?: Resource, description?: string) {
+  constructor(title: string, status: Status, estimateNumber: number, estimateUnit: EstimateUnit, assignee?: Resource, elapsedEstimate?: number, description?: string) {
     this.title = title
     this.status = status
     this.estimateNumber = estimateNumber
     this.estimateUnit = estimateUnit
     this.assignee = assignee
+    this.elapsedEstimate = elapsedEstimate
     this.description = description
   }
 
@@ -158,6 +160,7 @@ class Task {
     return result
   }
 
+  // todo refactor this with rejected statuses
   isFinished(): boolean {
     return this.status === Status.DONE
   }
@@ -203,15 +206,25 @@ const fallbackResource = averageResource([yaw, richard])
 
 // Tree
 
-const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, 2, EstimateUnit.DAYS, yaw, 'Klarna Payments')
-const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, 2, EstimateUnit.DAYS, richard, 'Klarna Payments')
-const finishTheDocs = new TaskNode('Complete docs', eoin, [connectDocs, paymentIntentDocs], 'Get Klarna docs ready for GA')
+const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, 2, EstimateUnit.DAYS, yaw, 10)
+const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, 2, EstimateUnit.DAYS, yaw)
+const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, 2, EstimateUnit.DAYS, richard)
+const finishTheDocs = new TaskNode('Complete docs', eoin, [connectDocs, paymentIntentDocs])
 
-const checkoutDogfooding = new Task('Checkout Dogfooding', Status.NOT_STARTED, 2, EstimateUnit.DAYS, richard, 'Checkout Dogfooding')
-const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, 2, EstimateUnit.STORY_POINTS, richard, 'PI Dogfooding')
+const checkoutDogfooding = new Task('Checkout Dogfooding', Status.NOT_STARTED, 2, EstimateUnit.DAYS, richard)
+const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, 2, EstimateUnit.STORY_POINTS, richard)
 const upeDogfooding = new Task('UPE Dogfooding', Status.NOT_STARTED, 2, EstimateUnit.STORY_POINTS)
-const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfooding, upeDogfooding], 'Dogfooding Klarna')
+const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfooding, upeDogfooding])
 
 const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get Klarna to GA')
+
+// Prioritization
+// Resource priotization
+// Resource availability
+// calendar?
+// how many days off per month / 6 months / year???
+
+// How to handle 'lead times' / parallelization?
+// End date???
 
 console.log(JSON.stringify(root.calculate(fallbackResource, [Status.DONE]), null, 2))
