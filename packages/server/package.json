@@ -16,6 +16,7 @@
     "lint:watch": "nodemon --watch src --exec \"yarn run lint:without:prettier\"",
     "lint:without:prettier": "yarn run lint:js:without:prettier",
     "precommit": "lint-staged && yarn run lint",
+    "prototype": "ts-node -r dotenv/config src/prototype/index.ts dotenv_config_path=.env.dev",
     "start": "ts-node -r dotenv/config src/index.ts dotenv_config_path=.env.dev",
     "start:built": "node build/src/index.js",
     "test": "jest",
