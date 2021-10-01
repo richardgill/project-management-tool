@@ -2,6 +2,39 @@
 
 import _ from 'lodash'
 
+type VelocityMap = { [key in EstimateUnit]: number }
+type ModelParams = {
+  remainingRejectStatuses: Status[]
+  velocityMappings: VelocityMappings
+}
+
+class VelocityMappings {
+  resourceVelocityMap: { [key: string]: VelocityMap }
+  fallbackVelocityMap: VelocityMap
+  fallbackToAverage: boolean
+
+  constructor(resourceVelocityMap: { [key: string]: VelocityMap }, fallbackVelocityMap: VelocityMap, fallbackToAverage: boolean = false) {
+    this.resourceVelocityMap = resourceVelocityMap
+    this.fallbackVelocityMap = fallbackVelocityMap
+    this.fallbackToAverage = fallbackToAverage
+  }
+
+  getVelocityMap(resource: Resource | undefined): VelocityMap {
+    return resource ? this.resourceVelocityMap[resource.handle] || this.getFallbackVelocityMap() : this.getFallbackVelocityMap()
+  }
+
+  getAverageVelocityMap(): VelocityMap {
+    const velocityMaps = _.values(this.resourceVelocityMap)
+    return _.mergeWith({}, ...velocityMaps, (a: number, b: number) => {
+      return b / velocityMaps.length + a
+    })
+  }
+
+  getFallbackVelocityMap(): VelocityMap {
+    return this.fallbackToAverage ? this.getAverageVelocityMap() : this.fallbackVelocityMap
+  }
+}
+
 enum Status {
   NOT_STARTED = 'NOT_STARTED',
   STARTED = 'STARTED',
@@ -26,13 +59,13 @@ class User {
 }
 
 class Resource {
+  handle: string
   name: string
   // calendar:
-  velocityMappingToCalendarWorkingDay: { [key in EstimateUnit]: number }
 
-  constructor(name: string, velocityMappingToCalendarWorkingDay: { [key in EstimateUnit]: number }) {
+  constructor(handle: string, name: string) {
+    this.handle = name
     this.name = name
-    this.velocityMappingToCalendarWorkingDay = velocityMappingToCalendarWorkingDay
   }
 }
 
@@ -62,22 +95,22 @@ class TaskNode {
       .value()
   }
 
-  assignedEstimatedWorkdays(rejectStatuses: Status[]): number {
+  assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): number {
     return _.chain(this.children)
-      .map(n => n.assignedEstimatedWorkdays(rejectStatuses))
+      .map(n => n.assignedEstimatedWorkdays(velocityMappings, rejectStatuses))
       .sum()
       .value()
   }
 
-  unassignedEstimatedWorkdays(fallback: Resource, rejectStatuses: Status[]): number {
+  unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): number {
     return _.chain(this.children)
-      .map(n => n.unassignedEstimatedWorkdays(fallback, rejectStatuses))
+      .map(n => n.unassignedEstimatedWorkdays(velocityMappings, rejectStatuses))
       .sum()
       .value()
   }
 
-  totalEstimatedWorkdays(fallback: Resource, rejectStatuses: Status[]): number {
-    return this.assignedEstimatedWorkdays(rejectStatuses) + this.unassignedEstimatedWorkdays(fallback, rejectStatuses)
+  totalEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): number {
+    return this.assignedEstimatedWorkdays(velocityMappings, rejectStatuses) + this.unassignedEstimatedWorkdays(velocityMappings, rejectStatuses)
   }
 
   taskCount(rejectStatuses: Status[] = []): number {
@@ -87,20 +120,20 @@ class TaskNode {
       .value()
   }
 
-  calculate(fallback: Resource, remainingRejectStatuses: Status[]): Object {
+  calculate({ velocityMappings, remainingRejectStatuses }: ModelParams): Object {
     return {
       ...this,
-      children: this.children.map(c => c.calculate(fallback, remainingRejectStatuses)),
+      children: this.children.map(c => c.calculate({ velocityMappings, remainingRejectStatuses })),
       taskCount: this.taskCount(),
       remainingTaskCount: this.taskCount(remainingRejectStatuses),
       sumOfEstimates: this.sumOfEstimates([]),
       remainingSumOfEstimates: this.sumOfEstimates(remainingRejectStatuses),
-      assignedEstimatedWorkdays: this.assignedEstimatedWorkdays([]),
-      unassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(fallback, []),
-      totalEstimatedWorkdays: this.totalEstimatedWorkdays(fallback, []),
-      remainingAssignedEstimatedWorkdays: this.assignedEstimatedWorkdays(remainingRejectStatuses),
-      remainingUnassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(fallback, remainingRejectStatuses),
-      remainingTotalEstimatedWorkdays: this.totalEstimatedWorkdays(fallback, remainingRejectStatuses),
+      assignedEstimatedWorkdays: this.assignedEstimatedWorkdays(velocityMappings, []),
+      unassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(velocityMappings, []),
+      totalEstimatedWorkdays: this.totalEstimatedWorkdays(velocityMappings, []),
+      remainingAssignedEstimatedWorkdays: this.assignedEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
+      remainingUnassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
+      remainingTotalEstimatedWorkdays: this.totalEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
     }
   }
 }
@@ -124,19 +157,19 @@ class Task {
     this.description = description
   }
 
-  estimatedWorkdays(assignee: Resource, rejectStatuses: Status[]) {
-    if (!assignee || rejectStatuses.includes(this.status)) {
+  estimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]) {
+    if (rejectStatuses.includes(this.status)) {
       return 0
     }
-    return this.estimateNumber / assignee.velocityMappingToCalendarWorkingDay[this.estimateUnit]
+    return this.estimateNumber / velocityMappings.getVelocityMap(this.assignee)[this.estimateUnit]
   }
 
-  assignedEstimatedWorkdays(rejectStatuses: Status[]) {
-    return this.assignee ? this.estimatedWorkdays(this.assignee, rejectStatuses) : 0
+  assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]) {
+    return this.assignee ? this.estimatedWorkdays(velocityMappings, rejectStatuses) : 0
   }
 
-  unassignedEstimatedWorkdays(fallbackAssignee: Resource, rejectStatuses: Status[]) {
-    return this.assignee ? 0 : this.estimatedWorkdays(fallbackAssignee, rejectStatuses)
+  unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]) {
+    return this.assignee ? 0 : this.estimatedWorkdays(velocityMappings, rejectStatuses)
   }
 
   sumOfEstimates(rejectStatuses: Status[]) {
@@ -153,18 +186,13 @@ class Task {
     return rejectStatuses.includes(this.status) ? 0 : 1
   }
 
-  calculate(fallback: Resource): Object {
+  calculate({ velocityMappings }: ModelParams): Object {
     return {
       ...this,
-      assignedEstimatedWorkdays: this.assignedEstimatedWorkdays([]),
-      unassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(fallback, []),
+      assignedEstimatedWorkdays: this.assignedEstimatedWorkdays(velocityMappings, []),
+      unassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(velocityMappings, []),
     }
   }
-}
-
-const averageResource = (resources: Resource[]) => {
-  // todo implement properly
-  return resources[0]
 }
 
 console.log('starting prototype')
@@ -172,10 +200,18 @@ console.log('starting prototype')
 const eoin = new User('enugent', 'Eoin')
 
 // Resources
-const yaw = new Resource('Yaw', { [EstimateUnit.DAYS]: 0.4, [EstimateUnit.STORY_POINTS]: 1 })
-const richard = new Resource('Richard', { [EstimateUnit.DAYS]: 0.8, [EstimateUnit.STORY_POINTS]: 2 })
+const yaw = new Resource('yaw', 'Yaw')
+const richard = new Resource('richard', 'Richard')
 
-const fallbackResource = averageResource([yaw, richard])
+const velocityMappings = new VelocityMappings(
+  {
+    [richard.handle]: { [EstimateUnit.DAYS]: 0.8, [EstimateUnit.STORY_POINTS]: 2 },
+    [yaw.handle]: { [EstimateUnit.DAYS]: 0.4, [EstimateUnit.STORY_POINTS]: 1 },
+  },
+  { [EstimateUnit.DAYS]: 0.5, [EstimateUnit.STORY_POINTS]: 1.2 },
+  false,
+)
+// const overrideVelocityMappings = new VelocityMappings({}, { [EstimateUnit.DAYS]: 0.2, [EstimateUnit.STORY_POINTS]: 0.8 }, false)
 
 // Tree
 
@@ -218,4 +254,4 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // Overall contingency?
 // contingency on mid level nodes?
 
-console.log(JSON.stringify(root.calculate(fallbackResource, [Status.DONE]), null, 2))
+console.log(JSON.stringify(root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] }), null, 2))
