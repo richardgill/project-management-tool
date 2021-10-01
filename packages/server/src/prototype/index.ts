@@ -1,4 +1,19 @@
+/* eslint-disable max-classes-per-file */
+
 import _ from 'lodash'
+
+enum Status {
+  NOT_STARTED = 'NOT_STARTED',
+  STARTED = 'STARTED',
+  IN_REVIEW = 'IN_REVIEW',
+  DONE = 'DONE',
+}
+
+enum EstimateUnit {
+  DAYS = 'DAYS',
+  // HOURS,
+  STORY_POINTS = 'STORY_POINTS',
+}
 
 class User {
   handle: string
@@ -34,17 +49,17 @@ class TaskNode {
     this.description = description
   }
 
-  sumOfEstimates(rejectStatuses: Status[]): { [key in EstimateUnit]: number } {
-    return {
-      [EstimateUnit.DAYS]: _.chain(this.children)
-        .map(n => n.sumOfEstimates(rejectStatuses)[EstimateUnit.DAYS])
-        .sum()
-        .value(),
-      [EstimateUnit.STORY_POINTS]: _.chain(this.children)
-        .map(n => n.sumOfEstimates(rejectStatuses)[EstimateUnit.STORY_POINTS])
-        .sum()
-        .value(),
-    }
+  sumOfEstimates(rejectStatuses: Status[]): { [key: string]: number } {
+    return _.chain(Object.keys(EstimateUnit))
+      .map(estimateUnit => [
+        estimateUnit,
+        _.chain(this.children)
+          .map(n => n.sumOfEstimates(rejectStatuses)[estimateUnit])
+          .sum()
+          .value(),
+      ])
+      .fromPairs()
+      .value()
   }
 
   assignedEstimatedWorkdays(rejectStatuses: Status[]): number {
@@ -65,26 +80,11 @@ class TaskNode {
     return this.assignedEstimatedWorkdays(rejectStatuses) + this.unassignedEstimatedWorkdays(fallback, rejectStatuses)
   }
 
-  unfinishedChildren(): (TaskNode | Task)[] {
-    return this.children.filter(c => !c.isFinished())
-  }
-
-  taskCount(): number {
+  taskCount(rejectStatuses: Status[] = []): number {
     return _.chain(this.children)
-      .map(n => n.taskCount())
+      .map(n => n.taskCount(rejectStatuses))
       .sum()
       .value()
-  }
-
-  unfinishedTaskCount(): number {
-    return _.chain(this.children)
-      .map(n => n.unfinishedTaskCount())
-      .sum()
-      .value()
-  }
-
-  isFinished(): boolean {
-    return _.every(this.children, c => c.isFinished())
   }
 
   calculate(fallback: Resource, remainingRejectStatuses: Status[]): Object {
@@ -92,7 +92,7 @@ class TaskNode {
       ...this,
       children: this.children.map(c => c.calculate(fallback, remainingRejectStatuses)),
       taskCount: this.taskCount(),
-      unfinishedTaskCount: this.unfinishedTaskCount(),
+      remainingTaskCount: this.taskCount(remainingRejectStatuses),
       sumOfEstimates: this.sumOfEstimates([]),
       remainingSumOfEstimates: this.sumOfEstimates(remainingRejectStatuses),
       assignedEstimatedWorkdays: this.assignedEstimatedWorkdays([]),
@@ -103,19 +103,6 @@ class TaskNode {
       remainingTotalEstimatedWorkdays: this.totalEstimatedWorkdays(fallback, remainingRejectStatuses),
     }
   }
-}
-
-enum Status {
-  NOT_STARTED = 'NOT_STARTED',
-  STARTED = 'STARTED',
-  IN_REVIEW = 'IN_REVIEW',
-  DONE = 'DONE',
-}
-
-enum EstimateUnit {
-  DAYS = 'DAYS',
-  // HOURS,
-  STORY_POINTS = 'STORY_POINTS',
 }
 
 class Task {
@@ -153,24 +140,17 @@ class Task {
   }
 
   sumOfEstimates(rejectStatuses: Status[]) {
-    let result: { [key: string]: number } = {}
-    for (const estimateUnit in EstimateUnit) {
-      result[estimateUnit] = this.estimateUnit === estimateUnit && !rejectStatuses.includes(this.status) ? this.estimateNumber : 0
-    }
-    return result
+    return _.chain(Object.keys(EstimateUnit))
+      .map(estimateUnit => {
+        const total = this.estimateUnit === estimateUnit && !rejectStatuses.includes(this.status) ? this.estimateNumber : 0
+        return [estimateUnit, total]
+      })
+      .fromPairs()
+      .value()
   }
 
-  // todo refactor this with rejected statuses
-  isFinished(): boolean {
-    return this.status === Status.DONE
-  }
-
-  unfinishedTaskCount(): number {
-    return this.isFinished() ? 0 : 1
-  }
-
-  taskCount(): number {
-    return 1
+  taskCount(rejectStatuses: Status[]): number {
+    return rejectStatuses.includes(this.status) ? 0 : 1
   }
 
   calculate(fallback: Resource): Object {
@@ -181,13 +161,6 @@ class Task {
     }
   }
 }
-
-// Tree with time left
-
-// Gant chart:
-
-// calendar days missing
-// no prioritization (what order do we tackle work)
 
 const averageResource = (resources: Resource[]) => {
   // todo implement properly
@@ -218,19 +191,29 @@ const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfo
 
 const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get Klarna to GA')
 
+// Missing:
+
+// What if you have a 'project' but you just want to ball park it '30 days'? Should we support this?
+// Decision: Won't build.
+
+// Putting dates on it:
+
 // Prioritization
 // Resource priotization
 // Global ticket prioritization?
+// Sub part of the tree?
 
 // How to handle unassigned tasks?
-// Fallback to average team (team is input)
+// Fallback to average team (team is param? team is attached to node in tree?)
 
 // Resource availability
 // calendar?
 // how many days off per month / 6 months / year???
 
 // How to handle 'lead times' / parallelization?
-// End date???
+// Solution: added 'elapsedEstimate' to tasks
+
+// End date in params???
 
 // Overall contingency?
 // contingency on mid level nodes?
