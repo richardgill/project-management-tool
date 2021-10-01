@@ -227,6 +227,8 @@ const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfo
 
 const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get Klarna to GA')
 
+// Spread estimates?
+
 // Missing:
 
 // What if you have a 'project' but you just want to ball park it '30 days'? Should we support this?
@@ -245,6 +247,7 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // Resource availability
 // calendar?
 // how many days off per month / 6 months / year???
+// How many days off / availability of the fallback / average?
 
 // How to handle 'lead times' / parallelization?
 // Solution: added 'elapsedEstimate' to tasks
