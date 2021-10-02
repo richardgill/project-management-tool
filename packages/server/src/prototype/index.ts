@@ -21,7 +21,7 @@ const velocityMappings = new VelocityMappings(
 
 // Tree
 
-const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), yaw, 10)
+const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, new SpreadEstimator(EstimateUnit.DAYS, 2, 3, 4), yaw, 10)
 const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), yaw)
 const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
 const finishTheDocs = new TaskNode('Complete docs', eoin, [upeDocs, connectDocs, paymentIntentDocs])
@@ -33,12 +33,9 @@ const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfo
 
 const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get Klarna to GA')
 
-
-
-
 // Risk / Spread estimates / Task level contingency?
 //    min est - mid est - max est
-//    
+//
 //    RISK
 //      -> estimate variance factor -> e.g. est X 120%
 //        -> MIN your estimate (or maybe EVF x 0.9)
@@ -56,7 +53,6 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // risk(20, 'DAYS', minFactor: 0.9, maxFactor: 1.1) -> 10, 20, 25 Spread
 // risk(20, 'DAYS', minFactor: 0.8, maxFactor: 1.1) -> 10, 20, 25 Spread
 // spread(10, 20, 25)
-
 
 // Simplify outputs
 //      Node ( STATUS, CALCULATOR, ASSIGNEE)

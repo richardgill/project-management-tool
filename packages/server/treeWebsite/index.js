@@ -12,99 +12,32 @@ var config = {
     HTMLclass: 'nodeExample1',
   },
 }
-// ,
-// ceo = {
-//   text: {
-//     name: 'Mark Hill',
-//     title: 'Chief executive officer',
-//     contact: 'Tel: 01 213 123 134',
-//   },
-//   HTMLid: 'ceo',
-// },
-// cto = {
-//   parent: ceo,
-//   text: {
-//     name: 'Joe Linux',
-//     title: 'Chief Technology Officer',
-//   },
-//   HTMLid: 'coo',
-// },
-// cbo = {
-//   parent: ceo,
-//   text: {
-//     name: 'Linda May',
-//     title: 'Chief Business Officer',
-//   },
-//   HTMLid: 'cbo',
-// },
-// cdo = {
-//   parent: ceo,
-//   text: {
-//     name: 'John Green',
-//     title: 'Chief accounting officer',
-//     contact: 'Tel: 01 213 123 134',
-//   },
-//   HTMLid: 'cdo',
-// },
-// cio = {
-//   parent: cto,
-//   text: {
-//     name: 'Ron Blomquist',
-//     title: 'Chief Information Security Officer',
-//   },
-//   HTMLid: 'cio',
-// },
-// ciso = {
-//   parent: cto,
-//   text: {
-//     name: 'Michael Rubin',
-//     title: 'Chief Innovation Officer',
-//     contact: 'we@aregreat.com',
-//   },
-//   HTMLid: 'ciso',
-// },
-// cio2 = {
-//   parent: cdo,
-//   text: {
-//     name: 'Erica Reel',
-//     title: 'Chief Customer Officer',
-//   },
-//   link: {
-//     href: 'http://www.google.com',
-//     target: '_blank',
-//   },
-//   HTMLid: 'cio2',
-// },
-// ciso2 = {
-//   parent: cbo,
-//   text: {
-//     name: 'Alice Lopez',
-//     title: 'Chief Communications Officer',
-//   },
-//   HTMLid: 'ciso2',
-// },
-// ciso3 = {
-//   parent: cbo,
-//   text: {
-//     name: 'Mary Johnson',
-//     title: 'Chief Brand Officer',
-//   },
-//   HTMLid: 'ciso2',
-// },
-// ciso4 = {
-//   parent: cbo,
-//   text: {
-//     name: 'Kirk Douglas',
-//     title: 'Chief Business Development Officer',
-//   },
-//   HTMLid: 'ciso2',
-// }
-// ceo, cto, cbo, cdo, cio, ciso, cio2, ciso2, ciso3, ciso4
 
 console.log(tree)
 
+const roundEstimate = estimate => _.round(estimate, 1)
+const formatSpread = spread => (spread ? `(min:${roundEstimate(spread.min)}, mid: ${roundEstimate(spread.mid)}, max: ${roundEstimate(spread.max)})` : null)
+
 const nodeToTreant = (node, parent) => {
-  return _.omitBy({ text: { name: node.title, ..._.omit(node, 'children', 'title') }, parent }, _.isNil)
+  const properties = {
+    owner: node?.owner?.handle,
+    assignee: node?.assignee?.handle,
+    status: node?.status,
+    estimator: JSON.stringify(node?.estimator, null, 2),
+    sumOfEstimatesDays: formatSpread(node?.sumOfEstimates?.DAYS),
+    remainingSumOfEstimates: formatSpread(node?.remainingSumOfEstimates?.DAYS),
+    assignedEstimatedWorkdays: formatSpread(node?.assignedEstimatedWorkdays),
+    totalEstimatedWorkdays: formatSpread(node?.totalEstimatedWorkdays),
+    unassignedEstimatedWorkdays: formatSpread(node?.unassignedEstimatedWorkdays),
+    remainingAssignedEstimatedWorkdays: formatSpread(node?.remainingAssignedEstimatedWorkdays),
+    remainingUnassignedEstimatedWorkdays: formatSpread(node?.remainingUnassignedEstimatedWorkdays),
+    remainingTotalEstimatedWorkdays: formatSpread(node?.remainingTotalEstimatedWorkdays),
+  }
+  const propertiesWithKey = _.chain(properties)
+    .omitBy(_.isNil)
+    .mapValues((v, k) => `${k}: ${v}`)
+    .value()
+  return _.omitBy({ text: { name: node.title, ...propertiesWithKey }, parent }, _.isNil)
 }
 
 const flattenTree = (node, parent = null) => {
