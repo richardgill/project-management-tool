@@ -37,7 +37,7 @@ const sumSpreadEstimates = (spreadEstimates: SpreadEstimate[]): SpreadEstimate =
     console.log(spreadEstimates)
     throw new Error('SpreadEstimates must have same units')
   }
-  if (_.isEmpty(spreadEstimates)) {
+  if (spreadEstimates.length === 0) {
     throw new Error('Cannot sum if there are no spread estimates!')
   }
   // Should only allow same units for all spread estimates
@@ -54,7 +54,7 @@ const sumSpreadEstimates = (spreadEstimates: SpreadEstimate[]): SpreadEstimate =
       .map(e => e.max)
       .sum()
       .value(),
-    estimateUnit: _.first(spreadEstimates)?.estimateUnit || EstimateUnit.DAYS,
+    estimateUnit: spreadEstimates[0].estimateUnit,
   }
 }
 
@@ -167,7 +167,7 @@ export class Task {
   title: string
   description?: string
   status: Status
-  elapsedEstimate?: number // e.g 7
+  elapsedEstimate?: number // e.g 7  Todo: richard, I think we should rename to elapsedDaysEstimate and leave as number.
   estimator: IEstimator
   assignee?: Resource
 
