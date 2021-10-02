@@ -1,4 +1,4 @@
-import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode } from './model'
+import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator } from './model'
 import { displayTree } from './displayTree'
 
 console.log('starting prototype')
@@ -21,19 +21,45 @@ const velocityMappings = new VelocityMappings(
 
 // Tree
 
-const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, 2, EstimateUnit.DAYS, yaw, 10)
-const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, 2, EstimateUnit.DAYS, yaw)
-const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, 2, EstimateUnit.DAYS, richard)
+const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), yaw, 10)
+const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), yaw)
+const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
 const finishTheDocs = new TaskNode('Complete docs', eoin, [upeDocs, connectDocs, paymentIntentDocs])
 
-const checkoutDogfooding = new Task('Checkout Dogfooding', Status.NOT_STARTED, 2, EstimateUnit.DAYS, richard)
-const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, 2, EstimateUnit.STORY_POINTS, richard)
-const upeDogfooding = new Task('UPE Dogfooding', Status.NOT_STARTED, 2, EstimateUnit.STORY_POINTS)
+const checkoutDogfooding = new Task('Checkout Dogfooding', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
+const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
+const upeDogfooding = new Task('UPE Dogfooding', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1))
 const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfooding, upeDogfooding])
 
 const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get Klarna to GA')
 
-// Spread estimates?
+
+
+
+// Risk / Spread estimates / Task level contingency?
+//    min est - mid est - max est
+//    
+//    RISK
+//      -> estimate variance factor -> e.g. est X 120%
+//        -> MIN your estimate (or maybe EVF x 0.9)
+//        -> MID your estimate (or maybe EVF x 1.0)
+//        -> MAX your estimate (or maybe EVF x 1.1)
+//    SPREAD
+//      -> I GIVE RISK
+//        -> MIN your estimate - User Provided
+//        -> MID your estimate - User Provided (mid point between min/max)
+//        -> MAX your estimate - User Provided
+
+//      TIMEESTIMATOR : Risk (factor) / SPREAD (MIN, MAX)
+
+// risk(20, 'DAYS', 0.1) -> 15, 20, 25 Spread
+// risk(20, 'DAYS', minFactor: 0.9, maxFactor: 1.1) -> 10, 20, 25 Spread
+// risk(20, 'DAYS', minFactor: 0.8, maxFactor: 1.1) -> 10, 20, 25 Spread
+// spread(10, 20, 25)
+
+
+// Simplify outputs
+//      Node ( STATUS, CALCULATOR, ASSIGNEE)
 
 // Missing:
 
@@ -43,7 +69,7 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // Putting dates on it:
 
 // Prioritization
-// Resource priotization
+// Resource prioritization
 // Global ticket prioritization?
 // Sub part of the tree?
 

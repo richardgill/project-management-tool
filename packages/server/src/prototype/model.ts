@@ -1,11 +1,39 @@
 /* eslint-disable max-classes-per-file */
 
+import { number } from '@hapi/joi'
 import _ from 'lodash'
 
 type VelocityMap = { [key in EstimateUnit]: number }
 type ModelParams = {
   remainingRejectStatuses: Status[]
   velocityMappings: VelocityMappings
+}
+
+export function convertEstimatesToWorkdays(estimates: SpreadEstimate, velocityMap: VelocityMap): SpreadEstimate {
+  const divisor = velocityMap[estimates.estimateUnit]
+  return  {
+    min: estimates.min / divisor,
+    mid: estimates.mid / divisor,
+    max: estimates.max / divisor,
+    estimateUnit: EstimateUnit.DAYS
+  }
+}
+
+export function sumSpreadEstimates(spreadEstimates: SpreadEstimate[]): SpreadEstimate {
+  if(!spreadEstimates.every( (val) => val.estimateUnit === spreadEstimates[0].estimateUnit )) {
+    console.log(spreadEstimates)
+    throw 'SpreadEstimates must have same units'
+  }
+  if(_.isEmpty(spreadEstimates)) {
+    throw 'Cannot sum if there are no spread estimates!'
+  }
+  // Should only allow same units for all spread estimates
+  return {
+    min: _.chain(spreadEstimates).map(e => e.min).sum().value(),
+    mid: _.chain(spreadEstimates).map(e => e.mid).sum().value(),
+    max: _.chain(spreadEstimates).map(e => e.max).sum().value(),
+    estimateUnit: _.first(spreadEstimates)?.estimateUnit || EstimateUnit.DAYS
+  }
 }
 
 export class VelocityMappings {
@@ -82,35 +110,26 @@ export class TaskNode {
     this.description = description
   }
 
-  sumOfEstimates(rejectStatuses: Status[]): { [key: string]: number } {
+  sumOfEstimates(rejectStatuses: Status[]): { [key: string]: SpreadEstimate } {
     return _.chain(Object.keys(EstimateUnit))
       .map(estimateUnit => [
         estimateUnit,
-        _.chain(this.children)
-          .map(n => n.sumOfEstimates(rejectStatuses)[estimateUnit])
-          .sum()
-          .value(),
+        sumSpreadEstimates(this.children.map(n => n.sumOfEstimates(rejectStatuses)[estimateUnit]))
       ])
       .fromPairs()
       .value()
   }
 
-  assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): number {
-    return _.chain(this.children)
-      .map(n => n.assignedEstimatedWorkdays(velocityMappings, rejectStatuses))
-      .sum()
-      .value()
+  assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return sumSpreadEstimates(this.children.map(n => n.assignedEstimatedWorkdays(velocityMappings, rejectStatuses)))
   }
 
-  unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): number {
-    return _.chain(this.children)
-      .map(n => n.unassignedEstimatedWorkdays(velocityMappings, rejectStatuses))
-      .sum()
-      .value()
+  unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return sumSpreadEstimates(this.children.map(n => n.unassignedEstimatedWorkdays(velocityMappings, rejectStatuses)))
   }
 
-  totalEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): number {
-    return this.assignedEstimatedWorkdays(velocityMappings, rejectStatuses) + this.unassignedEstimatedWorkdays(velocityMappings, rejectStatuses)
+  totalEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return sumSpreadEstimates([this.assignedEstimatedWorkdays(velocityMappings, rejectStatuses), this.unassignedEstimatedWorkdays(velocityMappings, rejectStatuses)])
   }
 
   taskCount(rejectStatuses: Status[] = []): number {
@@ -142,40 +161,42 @@ export class Task {
   title: string
   description?: string
   status: Status
-  estimateNumber: number // e.g 7
   elapsedEstimate?: number // e.g 7
-  estimateUnit: EstimateUnit // e.g. story points
+  estimator: IEstimator
   assignee?: Resource
 
-  constructor(title: string, status: Status, estimateNumber: number, estimateUnit: EstimateUnit, assignee?: Resource, elapsedEstimate?: number, description?: string) {
+  constructor(title: string, status: Status, estimator: IEstimator, assignee?: Resource, elapsedEstimate?: number, description?: string) {
     this.title = title
     this.status = status
-    this.estimateNumber = estimateNumber
-    this.estimateUnit = estimateUnit
+    this.estimator = estimator
     this.assignee = assignee
     this.elapsedEstimate = elapsedEstimate
     this.description = description
   }
 
-  estimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]) {
+  zeroEstimates(): SpreadEstimate {
+    return { min: 0, mid: 0, max: 0, estimateUnit: this.estimator.estimateUnit}
+  }
+
+  estimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
     if (rejectStatuses.includes(this.status)) {
-      return 0
+      return this.zeroEstimates()
     }
-    return this.estimateNumber / velocityMappings.getVelocityMap(this.assignee)[this.estimateUnit]
+    return convertEstimatesToWorkdays(this.estimator.calculateSpread(), velocityMappings.getVelocityMap(this.assignee))
   }
 
-  assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]) {
-    return this.assignee ? this.estimatedWorkdays(velocityMappings, rejectStatuses) : 0
+  assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return this.assignee ? this.estimatedWorkdays(velocityMappings, rejectStatuses) : this.zeroEstimates()
   }
 
-  unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]) {
-    return this.assignee ? 0 : this.estimatedWorkdays(velocityMappings, rejectStatuses)
+  unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]):SpreadEstimate {
+    return this.assignee ? this.zeroEstimates() : this.estimatedWorkdays(velocityMappings, rejectStatuses)
   }
 
-  sumOfEstimates(rejectStatuses: Status[]) {
+  sumOfEstimates(rejectStatuses: Status[]): { [key: string]: SpreadEstimate } {
     return _.chain(Object.keys(EstimateUnit))
       .map(estimateUnit => {
-        const total = this.estimateUnit === estimateUnit && !rejectStatuses.includes(this.status) ? this.estimateNumber : 0
+        const total = this.estimator.estimateUnit === estimateUnit && !rejectStatuses.includes(this.status) ? this.estimator.calculateSpread() : {min: 0, mid: 0, max: 0, estimateUnit: estimateUnit}
         return [estimateUnit, total]
       })
       .fromPairs()
@@ -194,3 +215,63 @@ export class Task {
     }
   }
 }
+
+type SpreadEstimate = {
+  min: number,
+  mid: number,
+  max: number,
+  estimateUnit: EstimateUnit
+}
+
+interface IEstimator {
+  estimateUnit: EstimateUnit
+  calculateSpread: () => SpreadEstimate
+}
+
+export class RiskEstimator implements IEstimator {
+  estimateUnit: EstimateUnit
+  estimateNumber: number
+  riskFactor: number
+  riskFactorSpread: number
+
+  constructor(estimateUnit: EstimateUnit, estimateNumber: number, riskFactor: number, riskFactorSpread: number = 0.1){
+    this.estimateUnit = estimateUnit
+    this.estimateNumber = estimateNumber
+    this.riskFactor = riskFactor
+    this.riskFactorSpread = riskFactorSpread
+  }
+
+  calculateSpread(): SpreadEstimate {
+    return {
+      min: this.estimateNumber * this.riskFactor * (1 - this.riskFactorSpread),
+      mid: this.estimateNumber * this.riskFactor,
+      max: this.estimateNumber * this.riskFactor * (1 + this.riskFactorSpread),
+      estimateUnit: this.estimateUnit
+    }
+  }
+}
+
+
+export class SpreadEstimator implements IEstimator {
+  estimateUnit: EstimateUnit
+  minEstimate: number
+  midEstimate: number
+  maxEstimate: number
+
+  constructor(estimateUnit: EstimateUnit, minEstimate: number, midEstimate: number, maxEstimate: number){
+    this.estimateUnit = estimateUnit
+    this.minEstimate = minEstimate
+    this.midEstimate = midEstimate
+    this.maxEstimate = maxEstimate
+  }
+
+  calculateSpread(): SpreadEstimate {
+    return {
+      min: this.minEstimate,
+      mid: this.midEstimate,
+      max: this.maxEstimate,
+      estimateUnit: this.estimateUnit
+    }
+  }
+}
+
