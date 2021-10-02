@@ -38,7 +38,7 @@
               },
             ],
           },
-          { name: 'Yu Jie', title: 'department manager', age: 12 },
+          { name: 'Yu Jie', title: 'department manager', age: 'Hello\nWorld\n' },
           { name: 'Yu Li', title: 'department manager' },
           { name: 'Hong Miao', title: 'department manager' },
           { name: 'Yu Wei', title: 'department manager' },
@@ -49,8 +49,14 @@
       var oc = $('#chart-container').orgchart({
         chartContainer: '#chart-container',
         data: datascource,
-        direction: 'r2l',
+        // direction: 'r2l',
+        nodeTitle: 'name',
         nodeContent: 'age',
+        createNode: (div, treeNode) => {
+          console.log(div, treeNode)
+          div.children[1].app
+          return 'what'
+        },
       })
       // new OrgChart()
     </script>

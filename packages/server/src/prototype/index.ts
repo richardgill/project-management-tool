@@ -1,5 +1,5 @@
 import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode } from './model'
-import { printTree } from './printTree'
+import { displayTree } from './displayTree'
 
 console.log('starting prototype')
 // Users
@@ -66,4 +66,4 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
 console.log(JSON.stringify(result, null, 2))
 
-printTree(result)
+displayTree(result)
