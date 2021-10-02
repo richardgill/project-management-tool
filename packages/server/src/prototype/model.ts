@@ -219,6 +219,7 @@ export class Task {
       ...this,
       assignedEstimatedWorkdays: this.assignedEstimatedWorkdays(velocityMappings, []),
       unassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(velocityMappings, []),
+      spread: this.estimator.calculateSpread(),
     }
   }
 }

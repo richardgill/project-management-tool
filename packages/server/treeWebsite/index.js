@@ -24,6 +24,7 @@ const nodeToTreant = (node, parent) => {
     assignee: node?.assignee?.handle,
     status: node?.status,
     estimator: JSON.stringify(node?.estimator, null, 2),
+    spread: JSON.stringify(node?.spread, null, 2),
     sumOfEstimatesDays: formatSpread(node?.sumOfEstimates?.DAYS),
     remainingSumOfEstimates: formatSpread(node?.remainingSumOfEstimates?.DAYS),
     assignedEstimatedWorkdays: formatSpread(node?.assignedEstimatedWorkdays),
