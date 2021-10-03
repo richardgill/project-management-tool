@@ -108,14 +108,16 @@ export class Resource {
 
 export class TaskNode {
   title: string
-  description?: string
   children: (TaskNode | Task)[]
   owner: User
+  resources?: Resource[]
+  description?: string
 
-  constructor(title: string, owner: User, children: (TaskNode | Task)[], description?: string) {
+  constructor({ title, owner, children, resources, description }: { title: string; owner: User; children: (TaskNode | Task)[]; resources?: Resource[]; description?: string }) {
     this.title = title
     this.children = children
     this.owner = owner
+    this.resources = resources
     this.description = description
   }
 
@@ -176,7 +178,21 @@ export class Task {
   resourceEstimator: IEstimator
   assignee?: Resource
 
-  constructor(title: string, status: Status, resourceEstimator: IEstimator, assignee?: Resource, expectedDaysToCompletion?: number, description?: string) {
+  constructor({
+    title,
+    status,
+    resourceEstimator,
+    assignee,
+    expectedDaysToCompletion,
+    description,
+  }: {
+    title: string
+    status: Status
+    resourceEstimator: IEstimator
+    assignee?: Resource
+    expectedDaysToCompletion?: number
+    description?: string
+  }) {
     this.title = title
     this.status = status
     this.resourceEstimator = resourceEstimator
