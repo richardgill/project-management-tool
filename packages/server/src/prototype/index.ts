@@ -33,7 +33,7 @@ const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfo
 
 const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get Klarna to GA')
 
-// Risk / Spread estimates / Task level contingency?
+// **DONE** Risk / Spread estimates / Task level contingency?
 //    min est - mid est - max est
 //
 //    RISK
@@ -60,7 +60,7 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // Missing:
 
 // What if you have a 'project' but you just want to ball park it '30 days'? Should we support this?
-// Decision: Won't build.
+// **DONE** Decision: Won't build.
 
 // Putting dates on it:
 
@@ -78,7 +78,7 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // How many days off / availability of the fallback / average?
 
 // How to handle 'lead times' / parallelization?
-// Solution: added 'elapsedEstimate' to tasks
+// **DONE** Solution: added 'elapsedEstimate' to tasks
 
 // End date in params???
 
