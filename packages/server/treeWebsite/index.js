@@ -27,12 +27,12 @@ const nodeToTreant = (node, parent) => {
     spread: JSON.stringify(node?.spread, null, 2),
     sumOfEstimatesDays: formatSpread(node?.sumOfEstimates?.DAYS),
     remainingSumOfEstimates: formatSpread(node?.remainingSumOfEstimates?.DAYS),
-    assignedEstimatedWorkdays: formatSpread(node?.assignedEstimatedWorkdays),
-    unassignedEstimatedWorkdays: formatSpread(node?.unassignedEstimatedWorkdays),
-    totalEstimatedWorkdays: formatSpread(node?.totalEstimatedWorkdays),
-    remainingAssignedEstimatedWorkdays: formatSpread(node?.remainingAssignedEstimatedWorkdays),
-    remainingUnassignedEstimatedWorkdays: formatSpread(node?.remainingUnassignedEstimatedWorkdays),
-    remainingTotalEstimatedWorkdays: formatSpread(node?.remainingTotalEstimatedWorkdays),
+    assignedResourceEstimatedWorkdays: formatSpread(node?.assignedResourceEstimatedWorkdays),
+    unassignedResourceEstimatedWorkdays: formatSpread(node?.unassignedResourceEstimatedWorkdays),
+    totalResourceEstimatedWorkdays: formatSpread(node?.totalResourceEstimatedWorkdays),
+    remainingAssignedResourceEstimatedWorkdays: formatSpread(node?.remainingAssignedResourceEstimatedWorkdays),
+    remainingUnassignedResourceEstimatedWorkdays: formatSpread(node?.remainingUnassignedResourceEstimatedWorkdays),
+    remainingTotalResourceEstimatedWorkdays: formatSpread(node?.remainingTotalResourceEstimatedWorkdays),
   }
   const propertiesWithKey = _.chain(properties)
     .omitBy(_.isNil)

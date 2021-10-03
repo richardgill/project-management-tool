@@ -21,17 +21,33 @@ const velocityMappings = new VelocityMappings(
 
 // Tree
 
-const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, new SpreadEstimator(EstimateUnit.STORY_POINTS, 2, 3, 4), yaw, 10)
-const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), yaw)
-const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), richard)
-const finishTheDocs = new TaskNode('Complete docs', eoin, [upeDocs, connectDocs, paymentIntentDocs])
+const upeDocs = new Task({
+  title: 'UPE Docs',
+  status: Status.NOT_STARTED,
+  resourceEstimator: new SpreadEstimator(EstimateUnit.STORY_POINTS, 2, 3, 4),
+  assignee: yaw,
+  expectedDaysToCompletion: 10,
+})
+const connectDocs = new Task({ title: 'Ungate `klarna_payments`', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), assignee: yaw })
+const paymentIntentDocs = new Task({ title: 'PI Docs', status: Status.IN_REVIEW, resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), assignee: richard })
+const finishTheDocs = new TaskNode({ title: 'Complete docs', owner: eoin, children: [upeDocs, connectDocs, paymentIntentDocs] })
 
-const checkoutDogfooding = new Task('Checkout Dogfooding', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
-const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), richard)
-const upeDogfooding = new Task('UPE Dogfooding', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1))
-const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfooding, upeDogfooding])
+const checkoutDogfooding = new Task({
+  title: 'Checkout Dogfooding',
+  status: Status.NOT_STARTED,
+  resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1),
+  assignee: richard,
+})
+const piDogfooding = new Task({
+  title: 'Payment Intents Dogfooding',
+  status: Status.DONE,
+  resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1),
+  assignee: richard,
+})
+const upeDogfooding = new Task({ title: 'UPE Dogfooding', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1) })
+const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding] })
 
-const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get Klarna to GA')
+const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTheDocs, dogfooding] })
 
 // **DONE** Risk / Spread estimates / Task level contingency?
 //    min est - mid est - max est
@@ -65,20 +81,40 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // Putting dates on it:
 
 // Prioritization
-// Resource prioritization
-// Global ticket prioritization?
+// Resource prioritization - this won't work because of unassigned tasks
+// Global task prioritization?
 // Sub part of the tree?
 
+//
+
 // How to handle unassigned tasks?
-// Fallback to average team (team is param? team is attached to node in tree?)
+// No? Fallback to average team (team is param? team is attached to node in tree?)
+// Randomly assign?
+// Split into assigned and unassigned? This might not work?
+
+// Current decision: Assign from resources (infer from parent nodes) (algorithm to pick resource if unassigned: find first available resource (no other work))
+
+//    TaskTree -
+//              |
+//           Scheduler   <-   ResourceAvailability
+//              |
+//            For Highest priority subnode in the entire tree... SCHEDULE
+//            For next highest priority subnode in the entire tree... SCHEDULE
+//            ... repeat...
+//
+//    * You should be able to provide to this, that some tasks already are scheduled! (or being being worked on) / assigned
+//    ! How do you gaurd against too many things being 'manually' assigned to someone? Stretch delivery date? HOW?
+//      Start will not be user configurable...? ** This might not work.... ** because if someone tells you that things are in "STARTED" state, what do you do?
 
 // Resource availability
 // calendar?
 // how many days off per month / 6 months / year???
 // How many days off / availability of the fallback / average?
-
 // Work days vs calendar days.
 
+// Current decision: Each resource has the dates they are 'working' e.g. 2021-01-01, 2021-01-02
+
+// Start date in params??
 // End date in params???
 
 // Overall contingency?
