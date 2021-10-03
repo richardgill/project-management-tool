@@ -126,16 +126,19 @@ export class TaskNode {
       .value()
   }
 
-  assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return sumSpreadEstimates(this.children.map(n => n.assignedEstimatedWorkdays(velocityMappings, rejectStatuses)))
+  assignedResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return sumSpreadEstimates(this.children.map(n => n.assignedResourceEstimatedWorkdays(velocityMappings, rejectStatuses)))
   }
 
-  unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return sumSpreadEstimates(this.children.map(n => n.unassignedEstimatedWorkdays(velocityMappings, rejectStatuses)))
+  unassignedResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return sumSpreadEstimates(this.children.map(n => n.unassignedResourceEstimatedWorkdays(velocityMappings, rejectStatuses)))
   }
 
-  totalEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return sumSpreadEstimates([this.assignedEstimatedWorkdays(velocityMappings, rejectStatuses), this.unassignedEstimatedWorkdays(velocityMappings, rejectStatuses)])
+  totalResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return sumSpreadEstimates([
+      this.assignedResourceEstimatedWorkdays(velocityMappings, rejectStatuses),
+      this.unassignedResourceEstimatedWorkdays(velocityMappings, rejectStatuses),
+    ])
   }
 
   taskCount(rejectStatuses: Status[] = []): number {
@@ -153,12 +156,12 @@ export class TaskNode {
       remainingTaskCount: this.taskCount(remainingRejectStatuses),
       sumOfEstimates: this.sumOfEstimates([]),
       remainingSumOfEstimates: this.sumOfEstimates(remainingRejectStatuses),
-      assignedEstimatedWorkdays: this.assignedEstimatedWorkdays(velocityMappings, []),
-      unassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(velocityMappings, []),
-      totalEstimatedWorkdays: this.totalEstimatedWorkdays(velocityMappings, []),
-      remainingAssignedEstimatedWorkdays: this.assignedEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
-      remainingUnassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
-      remainingTotalEstimatedWorkdays: this.totalEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
+      assignedResourceEstimatedWorkdays: this.assignedResourceEstimatedWorkdays(velocityMappings, []),
+      unassignedResourceEstimatedWorkdays: this.unassignedResourceEstimatedWorkdays(velocityMappings, []),
+      totalResourceEstimatedWorkdays: this.totalResourceEstimatedWorkdays(velocityMappings, []),
+      remainingAssignedResourceEstimatedWorkdays: this.assignedResourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
+      remainingUnassignedResourceEstimatedWorkdays: this.unassignedResourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
+      remainingTotalResourceEstimatedWorkdays: this.totalResourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses),
     }
   }
 }
@@ -169,39 +172,41 @@ export class Task {
   title: string
   description?: string
   status: Status
-  elapsedEstimate?: number // e.g 7  Todo: richard, I think we should rename to elapsedDaysEstimate and leave as number.
-  estimator: IEstimator
+  expectedDaysToCompletion?: number
+  resourceEstimator: IEstimator
   assignee?: Resource
 
-  constructor(title: string, status: Status, estimator: IEstimator, assignee?: Resource, elapsedEstimate?: number, description?: string) {
+  constructor(title: string, status: Status, resourceEstimator: IEstimator, assignee?: Resource, expectedDaysToCompletion?: number, description?: string) {
     this.title = title
     this.status = status
-    this.estimator = estimator
+    this.resourceEstimator = resourceEstimator
     this.assignee = assignee
-    this.elapsedEstimate = elapsedEstimate
+    this.expectedDaysToCompletion = expectedDaysToCompletion
     this.description = description
   }
 
-  estimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+  ResourceestimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
     if (rejectStatuses.includes(this.status)) {
       return ZERO_DAYS_ESTIMATE
     }
-    return convertEstimatesToWorkdays(this.estimator.calculateSpread(), velocityMappings.getVelocityMap(this.assignee))
+    return convertEstimatesToWorkdays(this.resourceEstimator.calculateSpread(), velocityMappings.getVelocityMap(this.assignee))
   }
 
-  assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return this.assignee ? this.estimatedWorkdays(velocityMappings, rejectStatuses) : ZERO_DAYS_ESTIMATE
+  assignedResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return this.assignee ? this.ResourceestimatedWorkdays(velocityMappings, rejectStatuses) : ZERO_DAYS_ESTIMATE
   }
 
-  unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return this.assignee ? ZERO_DAYS_ESTIMATE : this.estimatedWorkdays(velocityMappings, rejectStatuses)
+  unassignedResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+    return this.assignee ? ZERO_DAYS_ESTIMATE : this.ResourceestimatedWorkdays(velocityMappings, rejectStatuses)
   }
 
   sumOfEstimates(rejectStatuses: Status[]): { [key: string]: SpreadEstimate } {
     return _.chain(Object.keys(EstimateUnit))
       .map(estimateUnit => {
         const total =
-          this.estimator.estimateUnit === estimateUnit && !rejectStatuses.includes(this.status) ? this.estimator.calculateSpread() : { min: 0, mid: 0, max: 0, estimateUnit }
+          this.resourceEstimator.estimateUnit === estimateUnit && !rejectStatuses.includes(this.status)
+            ? this.resourceEstimator.calculateSpread()
+            : { min: 0, mid: 0, max: 0, estimateUnit }
         return [estimateUnit, total]
       })
       .fromPairs()
@@ -215,9 +220,9 @@ export class Task {
   calculate({ velocityMappings }: ModelParams): Object {
     return {
       ...this,
-      assignedEstimatedWorkdays: this.assignedEstimatedWorkdays(velocityMappings, []),
-      unassignedEstimatedWorkdays: this.unassignedEstimatedWorkdays(velocityMappings, []),
-      spread: this.estimator.calculateSpread(),
+      assignedResourceEstimatedWorkdays: this.assignedResourceEstimatedWorkdays(velocityMappings, []),
+      unassignedResourceEstimatedWorkdays: this.unassignedResourceEstimatedWorkdays(velocityMappings, []),
+      spread: this.resourceEstimator.calculateSpread(),
     }
   }
 }

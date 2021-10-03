@@ -77,13 +77,15 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // how many days off per month / 6 months / year???
 // How many days off / availability of the fallback / average?
 
-// How to handle 'lead times' / parallelization?
-// **DONE** Solution: added 'elapsedEstimate' to tasks
+// Work days vs calendar days.
 
 // End date in params???
 
 // Overall contingency?
 // contingency on mid level nodes?
+
+// How to handle 'lead times' / parallelization?
+// **DONE** Solution: added 'elapsedEstimate' to tasks
 
 const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
 console.log(JSON.stringify(result, null, 2))
