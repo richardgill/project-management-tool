@@ -163,6 +163,8 @@ export class TaskNode {
   }
 }
 
+const ZERO_DAYS_ESTIMATE = { min: 0, mid: 0, max: 0, estimateUnit: EstimateUnit.DAYS }
+
 export class Task {
   title: string
   description?: string
@@ -180,23 +182,19 @@ export class Task {
     this.description = description
   }
 
-  zeroEstimates(): SpreadEstimate {
-    return { min: 0, mid: 0, max: 0, estimateUnit: this.estimator.estimateUnit }
-  }
-
   estimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
     if (rejectStatuses.includes(this.status)) {
-      return this.zeroEstimates()
+      return ZERO_DAYS_ESTIMATE
     }
     return convertEstimatesToWorkdays(this.estimator.calculateSpread(), velocityMappings.getVelocityMap(this.assignee))
   }
 
   assignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return this.assignee ? this.estimatedWorkdays(velocityMappings, rejectStatuses) : this.zeroEstimates()
+    return this.assignee ? this.estimatedWorkdays(velocityMappings, rejectStatuses) : ZERO_DAYS_ESTIMATE
   }
 
   unassignedEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return this.assignee ? this.zeroEstimates() : this.estimatedWorkdays(velocityMappings, rejectStatuses)
+    return this.assignee ? ZERO_DAYS_ESTIMATE : this.estimatedWorkdays(velocityMappings, rejectStatuses)
   }
 
   sumOfEstimates(rejectStatuses: Status[]): { [key: string]: SpreadEstimate } {

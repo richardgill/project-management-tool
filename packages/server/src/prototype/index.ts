@@ -21,13 +21,13 @@ const velocityMappings = new VelocityMappings(
 
 // Tree
 
-const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, new SpreadEstimator(EstimateUnit.DAYS, 2, 3, 4), yaw, 10)
+const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, new SpreadEstimator(EstimateUnit.STORY_POINTS, 2, 3, 4), yaw, 10)
 const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), yaw)
-const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
+const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), richard)
 const finishTheDocs = new TaskNode('Complete docs', eoin, [upeDocs, connectDocs, paymentIntentDocs])
 
 const checkoutDogfooding = new Task('Checkout Dogfooding', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
-const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
+const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), richard)
 const upeDogfooding = new Task('UPE Dogfooding', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1))
 const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfooding, upeDogfooding])
 
