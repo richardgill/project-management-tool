@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 
 import _ from 'lodash'
+import dayjs from 'dayjs'
 
 export enum Status {
   NOT_STARTED = 'NOT_STARTED',
@@ -177,6 +178,7 @@ export class Task {
   expectedDaysToCompletion?: number
   resourceEstimator: IEstimator
   assignee?: Resource
+  created: dayjs.Dayjs
 
   constructor({
     title,
@@ -185,6 +187,7 @@ export class Task {
     assignee,
     expectedDaysToCompletion,
     description,
+    created,
   }: {
     title: string
     status: Status
@@ -192,6 +195,7 @@ export class Task {
     assignee?: Resource
     expectedDaysToCompletion?: number
     description?: string
+    created?: dayjs.Dayjs
   }) {
     this.title = title
     this.status = status
@@ -199,6 +203,7 @@ export class Task {
     this.assignee = assignee
     this.expectedDaysToCompletion = expectedDaysToCompletion
     this.description = description
+    this.created = created || dayjs()
   }
 
   ResourceestimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {

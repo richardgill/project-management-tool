@@ -37,18 +37,21 @@ const checkoutDogfooding = new Task({
   status: Status.NOT_STARTED,
   resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1),
   assignee: richard,
+  score: 10,
 })
 const piDogfooding = new Task({
   title: 'Payment Intents Dogfooding',
   status: Status.DONE,
   resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1),
   assignee: richard,
+  score: 5,
 })
 const upeDogfooding = new Task({ title: 'UPE Dogfooding', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1) })
-const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding] })
+const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding], resources: [yaw, richard], score: 10 })
 
 const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTheDocs, dogfooding] })
 
+const priorityList = [piDogfooding, checkoutDogfooding]
 // **DONE** Risk / Spread estimates / Task level contingency?
 //    min est - mid est - max est
 //
@@ -84,8 +87,29 @@ const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTh
 // Resource prioritization - this won't work because of unassigned tasks
 // Global task prioritization?
 // Sub part of the tree?
-
+//                         X
+//            (100)                  (1)                (0)
+//          (10 20 30 40 1)       (80 10 10 11)    (10 1 1 1 1 1 1)
+//            2  4  6               40  5  5
 //
+//                         X
+//            (25)                  (50)
+//          (x  x  x)             (80 x x)
+//           25 25 25             80 50 50
+
+
+//        Klarna GA           $200M
+//          - Ship Payments     150
+//            - payment intents   50 - DONE
+//            - checkout          50 - DONE
+//            - connect           50
+//          - upe               50
+//        Country Expansion   $75M
+//          - France            20 - STARTING
+//          - Maldova           5
+//          - Lituatnia         5
+//          - small country     5
+
 
 // How to handle unassigned tasks?
 // No? Fallback to average team (team is param? team is attached to node in tree?)
