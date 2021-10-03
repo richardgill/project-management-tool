@@ -21,19 +21,19 @@ const velocityMappings = new VelocityMappings(
 
 // Tree
 
-const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, new SpreadEstimator(EstimateUnit.DAYS, 2, 3, 4), yaw, 10)
+const upeDocs = new Task('UPE Docs', Status.NOT_STARTED, new SpreadEstimator(EstimateUnit.STORY_POINTS, 2, 3, 4), yaw, 10)
 const connectDocs = new Task('Ungate `klarna_payments`', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), yaw)
-const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
+const paymentIntentDocs = new Task('PI Docs', Status.IN_REVIEW, new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), richard)
 const finishTheDocs = new TaskNode('Complete docs', eoin, [upeDocs, connectDocs, paymentIntentDocs])
 
 const checkoutDogfooding = new Task('Checkout Dogfooding', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
-const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), richard)
+const piDogfooding = new Task('Payment Intents Dogfooding', Status.DONE, new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), richard)
 const upeDogfooding = new Task('UPE Dogfooding', Status.NOT_STARTED, new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1))
 const dogfooding = new TaskNode('Dogfooding', eoin, [checkoutDogfooding, piDogfooding, upeDogfooding])
 
 const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get Klarna to GA')
 
-// Risk / Spread estimates / Task level contingency?
+// **DONE** Risk / Spread estimates / Task level contingency?
 //    min est - mid est - max est
 //
 //    RISK
@@ -60,7 +60,7 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // Missing:
 
 // What if you have a 'project' but you just want to ball park it '30 days'? Should we support this?
-// Decision: Won't build.
+// **DONE** Decision: Won't build.
 
 // Putting dates on it:
 
@@ -78,7 +78,7 @@ const root = new TaskNode('Klarna GA', eoin, [finishTheDocs, dogfooding], 'Get K
 // How many days off / availability of the fallback / average?
 
 // How to handle 'lead times' / parallelization?
-// Solution: added 'elapsedEstimate' to tasks
+// **DONE** Solution: added 'elapsedEstimate' to tasks
 
 // End date in params???
 
