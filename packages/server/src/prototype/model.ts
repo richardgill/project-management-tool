@@ -151,6 +151,32 @@ export class TaskNode {
       .value()
   }
 
+  flattenedTasks(): Task[] {
+    return this.children.flatMap(c => {
+      if (c instanceof Task) {
+        return [c]
+      }
+      return c.flattenedTasks()
+    })
+  }
+
+  tasksTodoInPriorityOrder(): Task[] {
+    const tasksTodo = this.flattenedTasks().filter(t => t.status != Status.DONE)
+    const startedTasks = tasksTodo.filter(t => t.status != Status.NOT_STARTED)
+    const unstartedTasks = tasksTodo.filter(t => t.status === Status.NOT_STARTED)
+    return [
+      ...startedTasks,
+      ..._.chain(unstartedTasks)
+        .filter(t => !_.isNil(t.score))
+        .orderBy(t => t.score, 'desc')
+        .value(),
+      ..._.chain(unstartedTasks)
+        .filter(t => _.isNil(t.score))
+        .orderBy(t => t.created, 'asc')
+        .value(),
+    ]
+  }
+
   calculate({ velocityMappings, remainingRejectStatuses }: ModelParams): Object {
     return {
       ...this,
@@ -179,6 +205,7 @@ export class Task {
   resourceEstimator: IEstimator
   assignee?: Resource
   created: dayjs.Dayjs
+  score?: number
 
   constructor({
     title,
@@ -188,6 +215,7 @@ export class Task {
     expectedDaysToCompletion,
     description,
     created,
+    score,
   }: {
     title: string
     status: Status
@@ -196,6 +224,7 @@ export class Task {
     expectedDaysToCompletion?: number
     description?: string
     created?: dayjs.Dayjs
+    score?: number
   }) {
     this.title = title
     this.status = status
@@ -204,6 +233,7 @@ export class Task {
     this.expectedDaysToCompletion = expectedDaysToCompletion
     this.description = description
     this.created = created || dayjs()
+    this.score = score
   }
 
   ResourceestimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {

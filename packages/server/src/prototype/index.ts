@@ -28,8 +28,20 @@ const upeDocs = new Task({
   assignee: yaw,
   expectedDaysToCompletion: 10,
 })
-const connectDocs = new Task({ title: 'Ungate `klarna_payments`', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), assignee: yaw })
-const paymentIntentDocs = new Task({ title: 'PI Docs', status: Status.IN_REVIEW, resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), assignee: richard })
+const connectDocs = new Task({
+  title: 'Ungate `klarna_payments`',
+  status: Status.NOT_STARTED,
+  resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1),
+  assignee: yaw,
+  score: 20,
+})
+const paymentIntentDocs = new Task({
+  title: 'PI Docs',
+  status: Status.IN_REVIEW,
+  resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1),
+  assignee: richard,
+  score: 20,
+})
 const finishTheDocs = new TaskNode({ title: 'Complete docs', owner: eoin, children: [upeDocs, connectDocs, paymentIntentDocs] })
 
 const checkoutDogfooding = new Task({
@@ -47,7 +59,7 @@ const piDogfooding = new Task({
   score: 5,
 })
 const upeDogfooding = new Task({ title: 'UPE Dogfooding', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1) })
-const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding], resources: [yaw, richard], score: 10 })
+const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding], resources: [yaw, richard] })
 
 const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTheDocs, dogfooding] })
 
@@ -97,7 +109,6 @@ const priorityList = [piDogfooding, checkoutDogfooding]
 //          (x  x  x)             (80 x x)
 //           25 25 25             80 50 50
 
-
 //        Klarna GA           $200M
 //          - Ship Payments     150
 //            - payment intents   50 - DONE
@@ -109,7 +120,6 @@ const priorityList = [piDogfooding, checkoutDogfooding]
 //          - Maldova           5
 //          - Lituatnia         5
 //          - small country     5
-
 
 // How to handle unassigned tasks?
 // No? Fallback to average team (team is param? team is attached to node in tree?)
@@ -151,3 +161,5 @@ const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Stat
 console.log(JSON.stringify(result, null, 2))
 
 displayTree(result)
+
+console.log(root.tasksTodoInPriorityOrder())

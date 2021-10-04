@@ -23,6 +23,7 @@ const nodeToTreant = (node, parent) => {
     owner: node?.owner?.handle,
     assignee: node?.assignee?.handle,
     status: node?.status,
+    score: node?.score,
     estimator: JSON.stringify(node?.estimator, null, 2),
     spread: JSON.stringify(node?.spread, null, 2),
     sumOfEstimatesDays: formatSpread(node?.sumOfEstimates?.DAYS),
