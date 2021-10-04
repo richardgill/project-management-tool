@@ -253,19 +253,19 @@ export class Task {
     this.parent = parent
   }
 
-  ResourceestimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+  resourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[], assignee?: Resource): SpreadEstimate {
     if (rejectStatuses.includes(this.status)) {
       return ZERO_DAYS_ESTIMATE
     }
-    return convertEstimatesToWorkdays(this.resourceEstimator.calculateSpread(), velocityMappings.getVelocityMap(this.assignee))
+    return convertEstimatesToWorkdays(this.resourceEstimator.calculateSpread(), velocityMappings.getVelocityMap(assignee))
   }
 
   assignedResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return this.assignee ? this.ResourceestimatedWorkdays(velocityMappings, rejectStatuses) : ZERO_DAYS_ESTIMATE
+    return this.assignee ? this.resourceEstimatedWorkdays(velocityMappings, rejectStatuses, this.assignee) : ZERO_DAYS_ESTIMATE
   }
 
   unassignedResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return this.assignee ? ZERO_DAYS_ESTIMATE : this.ResourceestimatedWorkdays(velocityMappings, rejectStatuses)
+    return this.assignee ? ZERO_DAYS_ESTIMATE : this.resourceEstimatedWorkdays(velocityMappings, rejectStatuses)
   }
 
   sumOfEstimates(rejectStatuses: Status[]): { [key: string]: SpreadEstimate } {
@@ -369,9 +369,36 @@ class ScheduledTask {
   }
 }
 
-type ResourceTaskList = [
-  {
-    resource: Resource
-    tasks: ScheduledTask[]
-  },
-]
+type ResourceTaskList = {
+  resource: Resource
+  tasks: ScheduledTask[]
+}[]
+
+export const generateResourceTaskList = (
+  root: TaskNode,
+  resources: Resource[],
+  scenario: 'min' | 'mid' | 'max',
+  { velocityMappings, remainingRejectStatuses = [Status.DONE] }: ModelParams,
+) => {
+  const resourceTaskList: ResourceTaskList = resources.map(r => {
+    return { resource: r, tasks: [] }
+  })
+  const taskList = root.tasksTodoInPriorityOrder()
+  for (const task of taskList) {
+    // handle started tasks
+    if (task.status !== Status.NOT_STARTED) {
+      if (!task.assignee) {
+        throw 'STARTED tasks must have an assignee'
+      }
+    }
+
+    // This should become smarted and pick an assignee based on availability
+    const assignee = task.assignee || _.sample(resources)
+    const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
+    const currentTasks = _.find(resourceTaskList, { resource: task.assignee })?.tasks
+    const nextStartDate = _.get(_.last(currentTasks), 'endDate', dayjs())
+    const scheduledTask = new ScheduledTask(nextStartDate.add(1, 'days'), nextStartDate.add(Math.ceil(spread[scenario]), 'days'), task)
+    currentTasks?.push(scheduledTask)
+  }
+  return resourceTaskList
+}

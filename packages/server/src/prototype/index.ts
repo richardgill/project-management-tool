@@ -1,4 +1,5 @@
-import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator } from './model'
+import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, generateResourceTaskList } from './model'
+import _ from 'lodash'
 import { displayTree } from './displayTree'
 
 console.log('starting prototype')
@@ -160,6 +161,14 @@ const priorityList = [piDogfooding, checkoutDogfooding]
 const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
 console.log(JSON.stringify(result, null, 2))
 
-displayTree(result)
+// displayTree(result)
 
-console.log(root.tasksTodoInPriorityOrder())
+console.log(JSON.stringify(velocityMappings, null, 2))
+const taskList = generateResourceTaskList(root, [richard, yaw], 'max', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
+_.map(taskList, r => {
+  console.log(r)
+  _.map(r.tasks, t => {
+    console.log('%s, %s, %s', t.startDate, t.endDate, t.task.title)
+    console.log(t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE]))
+  })
+})
