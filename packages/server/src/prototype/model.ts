@@ -113,6 +113,7 @@ export class TaskNode {
   owner: User
   resources?: Resource[]
   description?: string
+  parent?: TaskNode
 
   constructor({ title, owner, children, resources, description }: { title: string; owner: User; children: (TaskNode | Task)[]; resources?: Resource[]; description?: string }) {
     this.title = title
@@ -120,6 +121,13 @@ export class TaskNode {
     this.owner = owner
     this.resources = resources
     this.description = description
+    for (const child of this.children) {
+      child.setParent(this)
+    }
+  }
+
+  setParent(parent: TaskNode) {
+    this.parent = parent
   }
 
   sumOfEstimates(rejectStatuses: Status[]): { [key: string]: SpreadEstimate } {
@@ -177,9 +185,13 @@ export class TaskNode {
     ]
   }
 
+  getResources(): Resource[] | null | undefined {
+    return this.resources || this.parent?.getResources()
+  }
+
   calculate({ velocityMappings, remainingRejectStatuses }: ModelParams): Object {
     return {
-      ...this,
+      ..._.omit(this, 'parent'),
       children: this.children.map(c => c.calculate({ velocityMappings, remainingRejectStatuses })),
       taskCount: this.taskCount(),
       remainingTaskCount: this.taskCount(remainingRejectStatuses),
@@ -206,6 +218,7 @@ export class Task {
   assignee?: Resource
   created: dayjs.Dayjs
   score?: number
+  parent?: TaskNode
 
   constructor({
     title,
@@ -234,6 +247,10 @@ export class Task {
     this.description = description
     this.created = created || dayjs()
     this.score = score
+  }
+
+  setParent(parent: TaskNode) {
+    this.parent = parent
   }
 
   ResourceestimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
@@ -270,11 +287,15 @@ export class Task {
 
   calculate({ velocityMappings }: ModelParams): Object {
     return {
-      ...this,
+      ..._.omit(this, 'parent'),
       assignedResourceEstimatedWorkdays: this.assignedResourceEstimatedWorkdays(velocityMappings, []),
       unassignedResourceEstimatedWorkdays: this.unassignedResourceEstimatedWorkdays(velocityMappings, []),
       spread: this.resourceEstimator.calculateSpread(),
     }
+  }
+
+  getResources(): Resource[] {
+    return this.parent?.getResources() || []
   }
 }
 
@@ -335,3 +356,22 @@ export class SpreadEstimator implements IEstimator {
     }
   }
 }
+
+class ScheduledTask {
+  startDate: dayjs.Dayjs
+  endDate: dayjs.Dayjs
+  task: Task
+
+  constructor(startDate: dayjs.Dayjs, endDate: dayjs.Dayjs, task: Task) {
+    this.startDate = startDate
+    this.endDate = endDate
+    this.task = task
+  }
+}
+
+type ResourceTaskList = [
+  {
+    resource: Resource
+    tasks: ScheduledTask[]
+  },
+]
