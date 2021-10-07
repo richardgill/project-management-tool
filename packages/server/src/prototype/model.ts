@@ -385,7 +385,7 @@ const getNextAvailableResource = (resourceTaskList: ResourceTaskList): Resource 
 }
 
 const tasksForResource = (resourceTaskList: ResourceTaskList, resource: Resource): ScheduledTask[] | undefined => {
-  return _.find(resourceTaskList, { resource: resource })?.tasks
+  return _.find(resourceTaskList, { resource })?.tasks
 }
 
 const emptyResourceTaskList = (resources: Resource[]) => {

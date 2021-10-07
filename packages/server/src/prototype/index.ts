@@ -1,7 +1,7 @@
-import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, ScheduledTask, generateResourceTaskList } from './model'
 import _ from 'lodash'
-import { displayTree } from './displayTree'
 import { inspect } from 'util' // or directly
+import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, ScheduledTask, generateResourceTaskList } from './model'
+// import { displayTree } from './displayTree'
 
 console.log('starting prototype')
 // Users
@@ -65,7 +65,6 @@ const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [c
 
 const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTheDocs, dogfooding] })
 
-const priorityList = [piDogfooding, checkoutDogfooding]
 // **DONE** Risk / Spread estimates / Task level contingency?
 //    min est - mid est - max est
 //
