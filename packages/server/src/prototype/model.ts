@@ -169,8 +169,8 @@ export class TaskNode {
   }
 
   tasksTodoInPriorityOrder(): Task[] {
-    const tasksTodo = this.flattenedTasks().filter(t => t.status != Status.DONE)
-    const startedTasks = tasksTodo.filter(t => t.status != Status.NOT_STARTED)
+    const tasksTodo = this.flattenedTasks().filter(t => t.status !== Status.DONE)
+    const startedTasks = tasksTodo.filter(t => t.status !== Status.NOT_STARTED)
     const unstartedTasks = tasksTodo.filter(t => t.status === Status.NOT_STARTED)
     return [
       ...startedTasks,
@@ -357,15 +357,21 @@ export class SpreadEstimator implements IEstimator {
   }
 }
 
-class ScheduledTask {
+export class ScheduledTask {
   startDate: dayjs.Dayjs
   endDate: dayjs.Dayjs
   task: Task
+  overrideAssignee?: Resource
 
-  constructor(startDate: dayjs.Dayjs, endDate: dayjs.Dayjs, task: Task) {
+  constructor(startDate: dayjs.Dayjs, endDate: dayjs.Dayjs, task: Task, overrideAssignee?: Resource) {
     this.startDate = startDate
     this.endDate = endDate
     this.task = task
+    this.overrideAssignee = overrideAssignee
+  }
+
+  assignee() {
+    return this.task.assignee || this.overrideAssignee
   }
 }
 
@@ -374,30 +380,40 @@ type ResourceTaskList = {
   tasks: ScheduledTask[]
 }[]
 
+const getNextAvailableResource = (resourceTaskList: ResourceTaskList): Resource => {
+  return resourceTaskList[0].resource
+}
+
+const tasksForResource = (resourceTaskList: ResourceTaskList, resource: Resource): ScheduledTask[] | undefined => {
+  return _.find(resourceTaskList, { resource: resource })?.tasks
+}
+
+const emptyResourceTaskList = (resources: Resource[]) => {
+  return resources.map(r => {
+    return { resource: r, tasks: [] }
+  })
+}
+
 export const generateResourceTaskList = (
   root: TaskNode,
   resources: Resource[],
   scenario: 'min' | 'mid' | 'max',
   { velocityMappings, remainingRejectStatuses = [Status.DONE] }: ModelParams,
+  startDate = dayjs().startOf('day'),
 ) => {
-  const resourceTaskList: ResourceTaskList = resources.map(r => {
-    return { resource: r, tasks: [] }
-  })
   const taskList = root.tasksTodoInPriorityOrder()
+  const resourceTaskList = emptyResourceTaskList(resources)
   for (const task of taskList) {
     // handle started tasks
-    if (task.status !== Status.NOT_STARTED) {
-      if (!task.assignee) {
-        throw 'STARTED tasks must have an assignee'
-      }
+    if (task.status !== Status.NOT_STARTED && !task.assignee) {
+      throw new Error('status=STARTED tasks must have an assignee')
     }
-
-    // This should become smarted and pick an assignee based on availability
-    const assignee = task.assignee || _.sample(resources)
+    // This should become smarter and pick an assignee based on availability
+    const assignee = task.assignee || getNextAvailableResource(resourceTaskList)
     const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
-    const currentTasks = _.find(resourceTaskList, { resource: task.assignee })?.tasks
-    const nextStartDate = _.get(_.last(currentTasks), 'endDate', dayjs())
-    const scheduledTask = new ScheduledTask(nextStartDate.add(1, 'days'), nextStartDate.add(Math.ceil(spread[scenario]), 'days'), task)
+    const currentTasks = tasksForResource(resourceTaskList, assignee)
+    const nextStartDate = _.get(_.last(currentTasks), 'endDate', startDate).add(1, 'days')
+    const scheduledTask = new ScheduledTask(nextStartDate, nextStartDate.add(Math.ceil(spread[scenario]), 'days'), task)
     currentTasks?.push(scheduledTask)
   }
   return resourceTaskList

@@ -1,6 +1,7 @@
-import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, generateResourceTaskList } from './model'
+import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, ScheduledTask, generateResourceTaskList } from './model'
 import _ from 'lodash'
 import { displayTree } from './displayTree'
+import { inspect } from 'util' // or directly
 
 console.log('starting prototype')
 // Users
@@ -164,11 +165,14 @@ console.log(JSON.stringify(result, null, 2))
 // displayTree(result)
 
 console.log(JSON.stringify(velocityMappings, null, 2))
-const taskList = generateResourceTaskList(root, [richard, yaw], 'max', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
+const taskList = generateResourceTaskList(root, [richard, yaw], 'mid', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
+
+console.log(inspect(taskList, { depth: 19 }))
+
 _.map(taskList, r => {
-  console.log(r)
-  _.map(r.tasks, t => {
-    console.log('%s, %s, %s', t.startDate, t.endDate, t.task.title)
-    console.log(t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE]))
+  console.log('Resource:', r.resource.handle)
+  _.map(r.tasks, (t: ScheduledTask) => {
+    console.log('  ', t.task.title, t.startDate.format(), t.endDate.format())
+    console.log('  ', t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE], t.assignee()))
   })
 })
