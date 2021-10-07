@@ -2,6 +2,11 @@
 
 import _ from 'lodash'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+
+dayjs.extend(utc)
+dayjs.extend(isSameOrAfter)
 
 export enum Status {
   NOT_STARTED = 'NOT_STARTED',
@@ -99,11 +104,12 @@ export class User {
 export class Resource {
   handle: string
   name: string
-  // calendar:
+  daysAvailableToWork: dayjs.Dayjs[]
 
-  constructor(handle: string, name: string) {
+  constructor(handle: string, name: string, daysAvailableToWork: dayjs.Dayjs[]) {
     this.handle = name
     this.name = name
+    this.daysAvailableToWork = daysAvailableToWork
   }
 }
 
@@ -382,6 +388,15 @@ type ResourceTask = {
 
 type ResourceTaskList = ResourceTask[]
 
+const resourceWorkingDaysToDate = (startDate: dayjs.Dayjs, resource: Resource, workingDays: number): dayjs.Dayjs => {
+  const upcomingDays = resource.daysAvailableToWork.filter(day => day.isSameOrAfter(startDate))
+  return upcomingDays[workingDays - 1]
+}
+
+const nextAvailableDay = (startDate: dayjs.Dayjs, resource: Resource) => {
+  return resourceWorkingDaysToDate(startDate, resource, 2)
+}
+
 const getNextAvailableResource = (task: Task, resourceTaskList: ResourceTaskList): Resource => {
   const possibleResources = task.getResources()
   const possibleResourceTaskList = resourceTaskList.filter(rt => possibleResources.map(r => r.handle).includes(rt.resource.handle))
@@ -410,7 +425,7 @@ export const generateResourceTaskList = (
   resources: Resource[],
   scenario: 'min' | 'mid' | 'max',
   { velocityMappings, remainingRejectStatuses = [Status.DONE] }: ModelParams,
-  startDate = dayjs().startOf('day'),
+  startDate = dayjs.utc().startOf('day'),
 ) => {
   const taskList = root.tasksTodoInPriorityOrder()
   const resourceTaskList = emptyResourceTaskList(resources)
@@ -424,8 +439,13 @@ export const generateResourceTaskList = (
     const assignee = task.assignee || getNextAvailableResource(task, resourceTaskList)
     const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
     const currentTasks = tasksForResource(resourceTaskList, assignee)
-    const nextStartDate = _.get(_.last(currentTasks), 'endDate', startDate).add(1, 'days')
-    const scheduledTask = new ScheduledTask(nextStartDate, nextStartDate.add(Math.ceil(spread[scenario]), 'days'), task, assignee)
+    console.log('currentTasks', currentTasks)
+    const previousTaskEnd = _.get(_.last(currentTasks), 'endDate', startDate)
+    console.log('previousTaskEnd', previousTaskEnd.format())
+    const nextStartDate = nextAvailableDay(previousTaskEnd, assignee)
+    const endDate = resourceWorkingDaysToDate(nextStartDate, assignee, Math.ceil(spread[scenario]))
+    // const endDate = nextStartDate.add(Math.ceil(spread[scenario]), 'days')
+    const scheduledTask = new ScheduledTask(nextStartDate, endDate, task, assignee)
     currentTasks?.push(scheduledTask)
   }
   return resourceTaskList

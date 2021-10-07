@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { inspect } from 'util' // or directly
 import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, ScheduledTask, generateResourceTaskList } from './model'
+import { businessDayRange } from './dates'
 // import { displayTree } from './displayTree'
 
 console.log('starting prototype')
@@ -8,8 +9,8 @@ console.log('starting prototype')
 const eoin = new User('enugent', 'Eoin')
 
 // Resources
-const yaw = new Resource('yaw', 'Yaw')
-const richard = new Resource('richard', 'Richard')
+const yaw = new Resource('yaw', 'Yaw', businessDayRange())
+const richard = new Resource('richard', 'Richard', businessDayRange())
 
 const velocityMappings = new VelocityMappings(
   {
@@ -156,11 +157,11 @@ const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTh
 // **DONE** Solution: added 'elapsedEstimate' to tasks
 
 const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
-console.log(JSON.stringify(result, null, 2))
+// console.log(JSON.stringify(result, null, 2))
 
 // displayTree(result)
 
-console.log(JSON.stringify(velocityMappings, null, 2))
+// console.log(JSON.stringify(velocityMappings, null, 2))
 const taskList = generateResourceTaskList(root, [richard, yaw], 'mid', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
 
 // console.log(inspect(taskList, { depth: 19 }))
