@@ -375,13 +375,24 @@ export class ScheduledTask {
   }
 }
 
-type ResourceTaskList = {
+type ResourceTask = {
   resource: Resource
   tasks: ScheduledTask[]
-}[]
+}
 
-const getNextAvailableResource = (resourceTaskList: ResourceTaskList): Resource => {
-  return resourceTaskList[0].resource
+type ResourceTaskList = ResourceTask[]
+
+const getNextAvailableResource = (task: Task, resourceTaskList: ResourceTaskList): Resource => {
+  const possibleResources = task.getResources()
+  const possibleResourceTaskList = resourceTaskList.filter(rt => possibleResources.map(r => r.handle).includes(rt.resource.handle))
+  const findLastTaskEndDate = (rt: ResourceTask) => {
+    return _.max(rt.tasks.map(t => t.endDate))
+  }
+  const nextAvailableResource = _.minBy(possibleResourceTaskList, findLastTaskEndDate)?.resource
+  if (!nextAvailableResource) {
+    throw new Error(`could not find a resource able to perform task: ${task}`)
+  }
+  return nextAvailableResource
 }
 
 const tasksForResource = (resourceTaskList: ResourceTaskList, resource: Resource): ScheduledTask[] | undefined => {
@@ -404,16 +415,17 @@ export const generateResourceTaskList = (
   const taskList = root.tasksTodoInPriorityOrder()
   const resourceTaskList = emptyResourceTaskList(resources)
   for (const task of taskList) {
+    console.log(task.title)
     // handle started tasks
     if (task.status !== Status.NOT_STARTED && !task.assignee) {
       throw new Error('status=STARTED tasks must have an assignee')
     }
     // This should become smarter and pick an assignee based on availability
-    const assignee = task.assignee || getNextAvailableResource(resourceTaskList)
+    const assignee = task.assignee || getNextAvailableResource(task, resourceTaskList)
     const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
     const currentTasks = tasksForResource(resourceTaskList, assignee)
     const nextStartDate = _.get(_.last(currentTasks), 'endDate', startDate).add(1, 'days')
-    const scheduledTask = new ScheduledTask(nextStartDate, nextStartDate.add(Math.ceil(spread[scenario]), 'days'), task)
+    const scheduledTask = new ScheduledTask(nextStartDate, nextStartDate.add(Math.ceil(spread[scenario]), 'days'), task, assignee)
     currentTasks?.push(scheduledTask)
   }
   return resourceTaskList

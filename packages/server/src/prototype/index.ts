@@ -27,7 +27,6 @@ const upeDocs = new Task({
   title: 'UPE Docs',
   status: Status.NOT_STARTED,
   resourceEstimator: new SpreadEstimator(EstimateUnit.STORY_POINTS, 2, 3, 4),
-  assignee: yaw,
   expectedDaysToCompletion: 10,
 })
 const connectDocs = new Task({
@@ -40,7 +39,7 @@ const connectDocs = new Task({
 const paymentIntentDocs = new Task({
   title: 'PI Docs',
   status: Status.IN_REVIEW,
-  resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1),
+  resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 5, 1.2, 0.1),
   assignee: richard,
   score: 20,
 })
@@ -50,20 +49,18 @@ const checkoutDogfooding = new Task({
   title: 'Checkout Dogfooding',
   status: Status.NOT_STARTED,
   resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1),
-  assignee: richard,
   score: 10,
 })
 const piDogfooding = new Task({
   title: 'Payment Intents Dogfooding',
   status: Status.DONE,
   resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1),
-  assignee: richard,
   score: 5,
 })
 const upeDogfooding = new Task({ title: 'UPE Dogfooding', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1) })
-const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding], resources: [yaw, richard] })
+const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding] })
 
-const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTheDocs, dogfooding] })
+const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTheDocs, dogfooding], resources: [yaw, richard] })
 
 // **DONE** Risk / Spread estimates / Task level contingency?
 //    min est - mid est - max est
@@ -166,7 +163,7 @@ console.log(JSON.stringify(result, null, 2))
 console.log(JSON.stringify(velocityMappings, null, 2))
 const taskList = generateResourceTaskList(root, [richard, yaw], 'mid', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
 
-console.log(inspect(taskList, { depth: 19 }))
+// console.log(inspect(taskList, { depth: 19 }))
 
 _.map(taskList, r => {
   console.log('Resource:', r.resource.handle)
