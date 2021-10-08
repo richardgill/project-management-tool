@@ -41,7 +41,6 @@ const convertEstimatesToWorkdays = (estimates: SpreadEstimate, velocityMap: Velo
 
 const sumSpreadEstimates = (spreadEstimates: SpreadEstimate[]): SpreadEstimate => {
   if (!spreadEstimates.every(val => val.estimateUnit === spreadEstimates[0].estimateUnit)) {
-    console.log(spreadEstimates)
     throw new Error('SpreadEstimates must have same units')
   }
   if (spreadEstimates.length === 0) {
@@ -459,7 +458,6 @@ export const generateResourceTaskList = (
   startDate = dayjs.utc().startOf('day'),
 ) => {
   const tasksTodo = root.tasksTodoInPriorityOrder()
-  console.log('resources', root.getAllResources())
   const resourcesWithTasks = emptyResourceTaskList(root.getAllResources())
   tasksTodo.forEach(task => {
     if (task.status !== Status.NOT_STARTED && !task.assignee) {
