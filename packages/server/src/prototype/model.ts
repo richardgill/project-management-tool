@@ -1,4 +1,5 @@
 /* eslint-disable max-classes-per-file */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 
 import _ from 'lodash'
 import dayjs from 'dayjs'
@@ -40,7 +41,6 @@ const convertEstimatesToWorkdays = (estimates: SpreadEstimate, velocityMap: Velo
 
 const sumSpreadEstimates = (spreadEstimates: SpreadEstimate[]): SpreadEstimate => {
   if (!spreadEstimates.every(val => val.estimateUnit === spreadEstimates[0].estimateUnit)) {
-    console.log(spreadEstimates)
     throw new Error('SpreadEstimates must have same units')
   }
   if (spreadEstimates.length === 0) {
@@ -127,9 +127,7 @@ export class TaskNode {
     this.owner = owner
     this.resources = resources
     this.description = description
-    for (const child of this.children) {
-      child.setParent(this)
-    }
+    this.children.forEach(child => child.setParent(this))
   }
 
   setParent(parent: TaskNode) {
@@ -191,8 +189,21 @@ export class TaskNode {
     ]
   }
 
-  getResources(): Resource[] | null | undefined {
-    return this.resources || this.parent?.getResources()
+  getPossibleResources(): Resource[] | null | undefined {
+    return this.resources || this.parent?.getPossibleResources()
+  }
+
+  getAllResources(includeStatuses = [Status.NOT_STARTED]): Resource[] {
+    const childrenResources = this.children.flatMap(c => {
+      if (c instanceof Task) {
+        return includeStatuses.includes(c.status) && c.assignee ? [c.assignee] : []
+      }
+      return c.getAllResources()
+    })
+    const resources = [...(this?.resources || []), ...childrenResources]
+    return _.chain(resources)
+      .uniqBy(r => r.handle)
+      .value()
   }
 
   calculate({ velocityMappings, remainingRejectStatuses }: ModelParams): Object {
@@ -300,8 +311,8 @@ export class Task {
     }
   }
 
-  getResources(): Resource[] {
-    return this.parent?.getResources() || []
+  getPossibleResources(): Resource[] {
+    return this.parent?.getPossibleResources() || []
   }
 }
 
@@ -381,12 +392,16 @@ export class ScheduledTask {
   }
 }
 
-type ResourceTask = {
+export type ResourceWithTasks = {
   resource: Resource
   tasks: ScheduledTask[]
 }
 
-type ResourceTaskList = ResourceTask[]
+export type SpreadScenario = 'min' | 'mid' | 'max'
+
+const tasksForResource = (resourcesWithTasks: ResourceWithTasks[], resource: Resource): ScheduledTask[] | undefined => {
+  return _.find(resourcesWithTasks, { resource })?.tasks
+}
 
 const resourceWorkingDaysToDate = (startDate: dayjs.Dayjs, resource: Resource, workingDays: number): dayjs.Dayjs => {
   const upcomingDays = resource.daysAvailableToWork.filter(day => day.isSameOrAfter(startDate))
@@ -397,54 +412,72 @@ const nextAvailableDay = (startDate: dayjs.Dayjs, resource: Resource) => {
   return resourceWorkingDaysToDate(startDate, resource, 2)
 }
 
-const getNextAvailableResource = (task: Task, resourceTaskList: ResourceTaskList): Resource => {
-  const possibleResources = task.getResources()
-  const possibleResourceTaskList = resourceTaskList.filter(rt => possibleResources.map(r => r.handle).includes(rt.resource.handle))
-  const findLastTaskEndDate = (rt: ResourceTask) => {
-    return _.max(rt.tasks.map(t => t.endDate))
-  }
-  const nextAvailableResource = _.minBy(possibleResourceTaskList, findLastTaskEndDate)?.resource
+const calculateStartEndDates = (
+  task: Task,
+  velocityMappings: VelocityMappings,
+  remainingRejectStatuses: Status[],
+  assignee: Resource,
+  resourcesWithTasks: ResourceWithTasks[],
+  fallbackStartDate: dayjs.Dayjs,
+  scenario: SpreadScenario,
+) => {
+  const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
+  const currentTasks = tasksForResource(resourcesWithTasks, assignee)
+  const previousTaskEnd = _.get(_.last(currentTasks), 'endDate', fallbackStartDate)
+  const nextStartDate = nextAvailableDay(previousTaskEnd, assignee)
+  const endDate = resourceWorkingDaysToDate(nextStartDate, assignee, Math.ceil(spread[scenario]))
+  return { nextStartDate, endDate }
+}
+
+const getNextAvailableResource = (
+  task: Task,
+  velocityMappings: VelocityMappings,
+  remainingRejectStatuses: Status[],
+  resourcesWithTasks: ResourceWithTasks[],
+  fallbackStartDate: dayjs.Dayjs,
+  scenario: SpreadScenario,
+): Resource => {
+  const possibleResources = task.getPossibleResources()
+  const nextAvailableResource = _.minBy(possibleResources, resource =>
+    calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, resource, resourcesWithTasks, fallbackStartDate, scenario).endDate.format(),
+  )
   if (!nextAvailableResource) {
     throw new Error(`could not find a resource able to perform task: ${task}`)
   }
   return nextAvailableResource
 }
 
-const tasksForResource = (resourceTaskList: ResourceTaskList, resource: Resource): ScheduledTask[] | undefined => {
-  return _.find(resourceTaskList, { resource })?.tasks
-}
-
 const emptyResourceTaskList = (resources: Resource[]) => {
-  return resources.map(r => {
-    return { resource: r, tasks: [] }
-  })
+  return resources.map(r => ({ resource: r, tasks: [] }))
 }
 
-export const generateResourceTaskList = (
+const generateResourceTaskList = (
   root: TaskNode,
-  resources: Resource[],
-  scenario: 'min' | 'mid' | 'max',
+  scenario: SpreadScenario,
   { velocityMappings, remainingRejectStatuses = [Status.DONE] }: ModelParams,
   startDate = dayjs.utc().startOf('day'),
-) => {
-  const taskList = root.tasksTodoInPriorityOrder()
-  const resourceTaskList = emptyResourceTaskList(resources)
-  for (const task of taskList) {
-    console.log(task.title)
-    // handle started tasks
+): ResourceWithTasks[] => {
+  const tasksTodo = root.tasksTodoInPriorityOrder()
+  const resourcesWithTasks = emptyResourceTaskList(root.getAllResources())
+  tasksTodo.forEach(task => {
     if (task.status !== Status.NOT_STARTED && !task.assignee) {
       throw new Error('status=STARTED tasks must have an assignee')
     }
-    // This should become smarter and pick an assignee based on availability
-    const assignee = task.assignee || getNextAvailableResource(task, resourceTaskList)
-    const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
-    const currentTasks = tasksForResource(resourceTaskList, assignee)
-    const previousTaskEnd = _.get(_.last(currentTasks), 'endDate', startDate)
-    const nextStartDate = nextAvailableDay(previousTaskEnd, assignee)
-    const endDate = resourceWorkingDaysToDate(nextStartDate, assignee, Math.ceil(spread[scenario]))
-    // const endDate = nextStartDate.add(Math.ceil(spread[scenario]), 'days')
+    const assignee = task.assignee || getNextAvailableResource(task, velocityMappings, remainingRejectStatuses, resourcesWithTasks, startDate, scenario)
+    const { nextStartDate, endDate } = calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, assignee, resourcesWithTasks, startDate, scenario)
     const scheduledTask = new ScheduledTask(nextStartDate, endDate, task, assignee)
+    const currentTasks = tasksForResource(resourcesWithTasks, assignee)
+
     currentTasks?.push(scheduledTask)
+  })
+  return resourcesWithTasks
+}
+export type SpreadResourceWithTasks = { [key in SpreadScenario]: ResourceWithTasks[] }
+
+export const generateResourceTaskLists = (root: TaskNode, modelParams: ModelParams, startDate = dayjs.utc().startOf('day')): SpreadResourceWithTasks => {
+  return {
+    min: generateResourceTaskList(root, 'min', modelParams, startDate),
+    mid: generateResourceTaskList(root, 'mid', modelParams, startDate),
+    max: generateResourceTaskList(root, 'max', modelParams, startDate),
   }
-  return resourceTaskList
 }

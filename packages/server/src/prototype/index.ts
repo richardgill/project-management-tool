@@ -1,6 +1,19 @@
 import _ from 'lodash'
-import { inspect } from 'util' // or directly
-import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, ScheduledTask, generateResourceTaskList } from './model'
+import {
+  Resource,
+  User,
+  VelocityMappings,
+  EstimateUnit,
+  Status,
+  Task,
+  TaskNode,
+  RiskEstimator,
+  SpreadEstimator,
+  ScheduledTask,
+  generateResourceTaskLists,
+  SpreadScenario,
+  SpreadResourceWithTasks,
+} from './model'
 import { businessDayRange } from './dates'
 // import { displayTree } from './displayTree'
 
@@ -11,6 +24,7 @@ const eoin = new User('enugent', 'Eoin')
 // Resources
 const yaw = new Resource('yaw', 'Yaw', businessDayRange())
 const richard = new Resource('richard', 'Richard', businessDayRange())
+const kaan = new Resource('kaan', 'Kaan', businessDayRange())
 
 const velocityMappings = new VelocityMappings(
   {
@@ -51,12 +65,14 @@ const checkoutDogfooding = new Task({
   status: Status.NOT_STARTED,
   resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1),
   score: 10,
+  assignee: kaan,
 })
 const piDogfooding = new Task({
   title: 'Payment Intents Dogfooding',
   status: Status.DONE,
   resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1),
   score: 5,
+  assignee: kaan,
 })
 const upeDogfooding = new Task({ title: 'UPE Dogfooding', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1) })
 const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding] })
@@ -156,20 +172,28 @@ const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTh
 // How to handle 'lead times' / parallelization?
 // **DONE** Solution: added 'elapsedEstimate' to tasks
 
-const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
+// const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
 // console.log(JSON.stringify(result, null, 2))
 
 // displayTree(result)
 
 // console.log(JSON.stringify(velocityMappings, null, 2))
-const taskList = generateResourceTaskList(root, [richard, yaw], 'mid', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
+
+const taskLists = generateResourceTaskLists(root, { velocityMappings, remainingRejectStatuses: [Status.DONE] })
 
 // console.log(inspect(taskList, { depth: 19 }))
-
-_.map(taskList, r => {
-  console.log('Resource:', r.resource.handle)
-  _.map(r.tasks, (t: ScheduledTask) => {
-    console.log('  ', t.task.title, t.startDate.format(), t.endDate.format())
-    console.log('  ', t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE], t.assignee()))
+const printTaskList = (spreadResourceWithTasks: SpreadResourceWithTasks, scenario: SpreadScenario) => {
+  console.log('\n\n')
+  console.log(scenario)
+  const taskList = spreadResourceWithTasks[scenario]
+  _.map(taskList, r => {
+    console.log('Resource:', r.resource.handle)
+    _.map(r.tasks, (t: ScheduledTask) => {
+      console.log('  ', t.task.title, t.startDate.format(), t.endDate.format(), 'expectedDaysToCompletion:', t.task.expectedDaysToCompletion)
+      console.log('  ', t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE], t.assignee())[scenario], 'days')
+    })
   })
-})
+}
+printTaskList(taskLists, 'min')
+printTaskList(taskLists, 'mid')
+printTaskList(taskLists, 'max')
