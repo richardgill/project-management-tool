@@ -16,6 +16,7 @@
     "lint:watch": "nodemon --watch src --exec \"yarn run lint:without:prettier\"",
     "lint:without:prettier": "yarn run lint:js:without:prettier",
     "precommit": "lint-staged && yarn run lint",
+    "prototype": "ts-node -r dotenv/config src/prototype/index.ts dotenv_config_path=.env.dev",
     "start": "ts-node -r dotenv/config src/index.ts dotenv_config_path=.env.dev",
     "start:built": "node build/src/index.js",
     "test": "jest",
@@ -38,11 +39,15 @@
     "@hapi/joi": "^17.1.1",
     "apollo-server": "^3.3.0",
     "apollo-server-express": "^3.3.0",
+    "bopen": "^2.6.0",
+    "dayjs": "^1.10.7",
+    "dayjs-business-days": "^1.0.4",
     "express": "^4.17.1",
     "firebase-admin": "^9.12.0",
     "graphql": "^15.6.0",
     "graphql-import": "^1.0.2",
     "graphql-tools": "^8.2.0",
+    "jsdom": "^17.0.0",
     "lodash": "^4.17.12"
   },
   "devDependencies": {
