@@ -179,7 +179,6 @@ const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTh
 
 // console.log(JSON.stringify(velocityMappings, null, 2))
 
-// todo infer resources
 const taskLists = generateResourceTaskLists(root, { velocityMappings, remainingRejectStatuses: [Status.DONE] })
 
 // console.log(inspect(taskList, { depth: 19 }))
