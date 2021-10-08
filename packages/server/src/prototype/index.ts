@@ -11,6 +11,7 @@ const eoin = new User('enugent', 'Eoin')
 // Resources
 const yaw = new Resource('yaw', 'Yaw', businessDayRange())
 const richard = new Resource('richard', 'Richard', businessDayRange())
+const kaan = new Resource('kaan', 'Kaan', businessDayRange())
 
 const velocityMappings = new VelocityMappings(
   {
@@ -51,12 +52,14 @@ const checkoutDogfooding = new Task({
   status: Status.NOT_STARTED,
   resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1),
   score: 10,
+  assignee: kaan,
 })
 const piDogfooding = new Task({
   title: 'Payment Intents Dogfooding',
   status: Status.DONE,
   resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1),
   score: 5,
+  assignee: kaan,
 })
 const upeDogfooding = new Task({ title: 'UPE Dogfooding', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1) })
 const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding] })
@@ -164,7 +167,7 @@ const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Stat
 // console.log(JSON.stringify(velocityMappings, null, 2))
 
 // todo infer resources
-const taskList = generateResourceTaskList(root, [richard, yaw], 'mid', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
+const taskList = generateResourceTaskList(root, 'mid', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
 
 // console.log(inspect(taskList, { depth: 19 }))
 

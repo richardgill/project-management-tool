@@ -8,6 +8,10 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 dayjs.extend(utc)
 dayjs.extend(isSameOrAfter)
 
+const notEmpty = <TValue>(value: TValue | null | undefined): value is TValue => {
+  return value !== null && value !== undefined
+}
+
 export enum Status {
   NOT_STARTED = 'NOT_STARTED',
   STARTED = 'STARTED',
@@ -191,8 +195,21 @@ export class TaskNode {
     ]
   }
 
-  getResources(): Resource[] | null | undefined {
-    return this.resources || this.parent?.getResources()
+  getPossibleResources(): Resource[] | null | undefined {
+    return this.resources || this.parent?.getPossibleResources()
+  }
+
+  getAllResources(includeStatuses = [Status.NOT_STARTED]): Resource[] {
+    const childrenResources = this.children.flatMap(c => {
+      if (c instanceof Task) {
+        return includeStatuses.includes(c.status) && c.assignee ? [c.assignee] : []
+      }
+      return c.getAllResources()
+    })
+    const resources = [...(this?.resources || []), ...childrenResources]
+    return _.chain(resources)
+      .uniqBy(r => r.handle)
+      .value()
   }
 
   calculate({ velocityMappings, remainingRejectStatuses }: ModelParams): Object {
@@ -300,8 +317,8 @@ export class Task {
     }
   }
 
-  getResources(): Resource[] {
-    return this.parent?.getResources() || []
+  getPossibleResources(): Resource[] {
+    return this.parent?.getPossibleResources() || []
   }
 }
 
@@ -422,7 +439,7 @@ const getNextAvailableResource = (
   fallbackStartDate: dayjs.Dayjs,
   scenario: SpreadScenario,
 ): Resource => {
-  const possibleResources = task.getResources()
+  const possibleResources = task.getPossibleResources()
   const nextAvailableResource = _.minBy(possibleResources, resource =>
     calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, resource, resourcesWithTasks, fallbackStartDate, scenario).endDate.format(),
   )
@@ -437,25 +454,22 @@ const tasksForResource = (resourcesWithTasks: ResourceWithTasks[], resource: Res
 }
 
 const emptyResourceTaskList = (resources: Resource[]) => {
-  return resources.map(r => {
-    return { resource: r, tasks: [] }
-  })
+  return resources.map(r => ({ resource: r, tasks: [] }))
 }
 
 export const generateResourceTaskList = (
   root: TaskNode,
-  resources: Resource[],
   scenario: SpreadScenario,
   { velocityMappings, remainingRejectStatuses = [Status.DONE] }: ModelParams,
   startDate = dayjs.utc().startOf('day'),
 ) => {
   const tasksTodo = root.tasksTodoInPriorityOrder()
-  const resourcesWithTasks = emptyResourceTaskList(resources)
+  console.log('resources', root.getAllResources())
+  const resourcesWithTasks = emptyResourceTaskList(root.getAllResources())
   for (const task of tasksTodo) {
     if (task.status !== Status.NOT_STARTED && !task.assignee) {
       throw new Error('status=STARTED tasks must have an assignee')
     }
-    // This should become smarter and pick an assignee based on availability
     const assignee = task.assignee || getNextAvailableResource(task, velocityMappings, remainingRejectStatuses, resourcesWithTasks, startDate, scenario)
     const { nextStartDate, endDate } = calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, assignee, resourcesWithTasks, startDate, scenario)
     const scheduledTask = new ScheduledTask(nextStartDate, endDate, task, assignee)
