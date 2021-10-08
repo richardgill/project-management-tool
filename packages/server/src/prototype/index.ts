@@ -1,13 +1,30 @@
-import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator } from './model'
-import { displayTree } from './displayTree'
+import _ from 'lodash'
+import {
+  Resource,
+  User,
+  VelocityMappings,
+  EstimateUnit,
+  Status,
+  Task,
+  TaskNode,
+  RiskEstimator,
+  SpreadEstimator,
+  ScheduledTask,
+  generateResourceTaskLists,
+  SpreadScenario,
+  SpreadResourceWithTasks,
+} from './model'
+import { businessDayRange } from './dates'
+// import { displayTree } from './displayTree'
 
 console.log('starting prototype')
 // Users
 const eoin = new User('enugent', 'Eoin')
 
 // Resources
-const yaw = new Resource('yaw', 'Yaw')
-const richard = new Resource('richard', 'Richard')
+const yaw = new Resource('yaw', 'Yaw', businessDayRange())
+const richard = new Resource('richard', 'Richard', businessDayRange())
+const kaan = new Resource('kaan', 'Kaan', businessDayRange())
 
 const velocityMappings = new VelocityMappings(
   {
@@ -25,29 +42,42 @@ const upeDocs = new Task({
   title: 'UPE Docs',
   status: Status.NOT_STARTED,
   resourceEstimator: new SpreadEstimator(EstimateUnit.STORY_POINTS, 2, 3, 4),
-  assignee: yaw,
   expectedDaysToCompletion: 10,
 })
-const connectDocs = new Task({ title: 'Ungate `klarna_payments`', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1), assignee: yaw })
-const paymentIntentDocs = new Task({ title: 'PI Docs', status: Status.IN_REVIEW, resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1), assignee: richard })
+const connectDocs = new Task({
+  title: 'Ungate `klarna_payments`',
+  status: Status.NOT_STARTED,
+  resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1),
+  assignee: yaw,
+  score: 20,
+})
+const paymentIntentDocs = new Task({
+  title: 'PI Docs',
+  status: Status.IN_REVIEW,
+  resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 5, 1.2, 0.1),
+  assignee: richard,
+  score: 20,
+})
 const finishTheDocs = new TaskNode({ title: 'Complete docs', owner: eoin, children: [upeDocs, connectDocs, paymentIntentDocs] })
 
 const checkoutDogfooding = new Task({
   title: 'Checkout Dogfooding',
   status: Status.NOT_STARTED,
   resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1),
-  assignee: richard,
+  score: 10,
+  assignee: kaan,
 })
 const piDogfooding = new Task({
   title: 'Payment Intents Dogfooding',
   status: Status.DONE,
   resourceEstimator: new RiskEstimator(EstimateUnit.STORY_POINTS, 2, 1.2, 0.1),
-  assignee: richard,
+  score: 5,
+  assignee: kaan,
 })
 const upeDogfooding = new Task({ title: 'UPE Dogfooding', status: Status.NOT_STARTED, resourceEstimator: new RiskEstimator(EstimateUnit.DAYS, 2, 1.2, 0.1) })
 const dogfooding = new TaskNode({ title: 'Dogfooding', owner: eoin, children: [checkoutDogfooding, piDogfooding, upeDogfooding] })
 
-const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTheDocs, dogfooding] })
+const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTheDocs, dogfooding], resources: [yaw, richard] })
 
 // **DONE** Risk / Spread estimates / Task level contingency?
 //    min est - mid est - max est
@@ -84,8 +114,27 @@ const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTh
 // Resource prioritization - this won't work because of unassigned tasks
 // Global task prioritization?
 // Sub part of the tree?
-
+//                         X
+//            (100)                  (1)                (0)
+//          (10 20 30 40 1)       (80 10 10 11)    (10 1 1 1 1 1 1)
+//            2  4  6               40  5  5
 //
+//                         X
+//            (25)                  (50)
+//          (x  x  x)             (80 x x)
+//           25 25 25             80 50 50
+
+//        Klarna GA           $200M
+//          - Ship Payments     150
+//            - payment intents   50 - DONE
+//            - checkout          50 - DONE
+//            - connect           50
+//          - upe               50
+//        Country Expansion   $75M
+//          - France            20 - STARTING
+//          - Maldova           5
+//          - Lituatnia         5
+//          - small country     5
 
 // How to handle unassigned tasks?
 // No? Fallback to average team (team is param? team is attached to node in tree?)
@@ -123,7 +172,28 @@ const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTh
 // How to handle 'lead times' / parallelization?
 // **DONE** Solution: added 'elapsedEstimate' to tasks
 
-const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
-console.log(JSON.stringify(result, null, 2))
+// const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
+// console.log(JSON.stringify(result, null, 2))
 
-displayTree(result)
+// displayTree(result)
+
+// console.log(JSON.stringify(velocityMappings, null, 2))
+
+const taskLists = generateResourceTaskLists(root, { velocityMappings, remainingRejectStatuses: [Status.DONE] })
+
+// console.log(inspect(taskList, { depth: 19 }))
+const printTaskList = (spreadResourceWithTasks: SpreadResourceWithTasks, scenario: SpreadScenario) => {
+  console.log('\n\n')
+  console.log(scenario)
+  const taskList = spreadResourceWithTasks[scenario]
+  _.map(taskList, r => {
+    console.log('Resource:', r.resource.handle)
+    _.map(r.tasks, (t: ScheduledTask) => {
+      console.log('  ', t.task.title, t.startDate.format(), t.endDate.format(), 'expectedDaysToCompletion:', t.task.expectedDaysToCompletion)
+      console.log('  ', t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE], t.assignee())[scenario], 'days')
+    })
+  })
+}
+printTaskList(taskLists, 'min')
+printTaskList(taskLists, 'mid')
+printTaskList(taskLists, 'max')

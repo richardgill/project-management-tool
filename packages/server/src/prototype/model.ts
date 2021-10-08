@@ -1,6 +1,13 @@
 /* eslint-disable max-classes-per-file */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 
 import _ from 'lodash'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+
+dayjs.extend(utc)
+dayjs.extend(isSameOrAfter)
 
 export enum Status {
   NOT_STARTED = 'NOT_STARTED',
@@ -34,7 +41,6 @@ const convertEstimatesToWorkdays = (estimates: SpreadEstimate, velocityMap: Velo
 
 const sumSpreadEstimates = (spreadEstimates: SpreadEstimate[]): SpreadEstimate => {
   if (!spreadEstimates.every(val => val.estimateUnit === spreadEstimates[0].estimateUnit)) {
-    console.log(spreadEstimates)
     throw new Error('SpreadEstimates must have same units')
   }
   if (spreadEstimates.length === 0) {
@@ -98,11 +104,12 @@ export class User {
 export class Resource {
   handle: string
   name: string
-  // calendar:
+  daysAvailableToWork: dayjs.Dayjs[]
 
-  constructor(handle: string, name: string) {
+  constructor(handle: string, name: string, daysAvailableToWork: dayjs.Dayjs[]) {
     this.handle = name
     this.name = name
+    this.daysAvailableToWork = daysAvailableToWork
   }
 }
 
@@ -112,6 +119,7 @@ export class TaskNode {
   owner: User
   resources?: Resource[]
   description?: string
+  parent?: TaskNode
 
   constructor({ title, owner, children, resources, description }: { title: string; owner: User; children: (TaskNode | Task)[]; resources?: Resource[]; description?: string }) {
     this.title = title
@@ -119,6 +127,11 @@ export class TaskNode {
     this.owner = owner
     this.resources = resources
     this.description = description
+    this.children.forEach(child => child.setParent(this))
+  }
+
+  setParent(parent: TaskNode) {
+    this.parent = parent
   }
 
   sumOfEstimates(rejectStatuses: Status[]): { [key: string]: SpreadEstimate } {
@@ -150,9 +163,52 @@ export class TaskNode {
       .value()
   }
 
+  flattenedTasks(): Task[] {
+    return this.children.flatMap(c => {
+      if (c instanceof Task) {
+        return [c]
+      }
+      return c.flattenedTasks()
+    })
+  }
+
+  tasksTodoInPriorityOrder(): Task[] {
+    const tasksTodo = this.flattenedTasks().filter(t => t.status !== Status.DONE)
+    const startedTasks = tasksTodo.filter(t => t.status !== Status.NOT_STARTED)
+    const unstartedTasks = tasksTodo.filter(t => t.status === Status.NOT_STARTED)
+    return [
+      ...startedTasks,
+      ..._.chain(unstartedTasks)
+        .filter(t => !_.isNil(t.score))
+        .orderBy(t => t.score, 'desc')
+        .value(),
+      ..._.chain(unstartedTasks)
+        .filter(t => _.isNil(t.score))
+        .orderBy(t => t.created, 'asc')
+        .value(),
+    ]
+  }
+
+  getPossibleResources(): Resource[] | null | undefined {
+    return this.resources || this.parent?.getPossibleResources()
+  }
+
+  getAllResources(includeStatuses = [Status.NOT_STARTED]): Resource[] {
+    const childrenResources = this.children.flatMap(c => {
+      if (c instanceof Task) {
+        return includeStatuses.includes(c.status) && c.assignee ? [c.assignee] : []
+      }
+      return c.getAllResources()
+    })
+    const resources = [...(this?.resources || []), ...childrenResources]
+    return _.chain(resources)
+      .uniqBy(r => r.handle)
+      .value()
+  }
+
   calculate({ velocityMappings, remainingRejectStatuses }: ModelParams): Object {
     return {
-      ...this,
+      ..._.omit(this, 'parent'),
       children: this.children.map(c => c.calculate({ velocityMappings, remainingRejectStatuses })),
       taskCount: this.taskCount(),
       remainingTaskCount: this.taskCount(remainingRejectStatuses),
@@ -177,6 +233,9 @@ export class Task {
   expectedDaysToCompletion?: number
   resourceEstimator: IEstimator
   assignee?: Resource
+  created: dayjs.Dayjs
+  score?: number
+  parent?: TaskNode
 
   constructor({
     title,
@@ -185,6 +244,8 @@ export class Task {
     assignee,
     expectedDaysToCompletion,
     description,
+    created,
+    score,
   }: {
     title: string
     status: Status
@@ -192,6 +253,8 @@ export class Task {
     assignee?: Resource
     expectedDaysToCompletion?: number
     description?: string
+    created?: dayjs.Dayjs
+    score?: number
   }) {
     this.title = title
     this.status = status
@@ -199,21 +262,27 @@ export class Task {
     this.assignee = assignee
     this.expectedDaysToCompletion = expectedDaysToCompletion
     this.description = description
+    this.created = created || dayjs()
+    this.score = score
   }
 
-  ResourceestimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
+  setParent(parent: TaskNode) {
+    this.parent = parent
+  }
+
+  resourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[], assignee?: Resource): SpreadEstimate {
     if (rejectStatuses.includes(this.status)) {
       return ZERO_DAYS_ESTIMATE
     }
-    return convertEstimatesToWorkdays(this.resourceEstimator.calculateSpread(), velocityMappings.getVelocityMap(this.assignee))
+    return convertEstimatesToWorkdays(this.resourceEstimator.calculateSpread(), velocityMappings.getVelocityMap(assignee))
   }
 
   assignedResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return this.assignee ? this.ResourceestimatedWorkdays(velocityMappings, rejectStatuses) : ZERO_DAYS_ESTIMATE
+    return this.assignee ? this.resourceEstimatedWorkdays(velocityMappings, rejectStatuses, this.assignee) : ZERO_DAYS_ESTIMATE
   }
 
   unassignedResourceEstimatedWorkdays(velocityMappings: VelocityMappings, rejectStatuses: Status[]): SpreadEstimate {
-    return this.assignee ? ZERO_DAYS_ESTIMATE : this.ResourceestimatedWorkdays(velocityMappings, rejectStatuses)
+    return this.assignee ? ZERO_DAYS_ESTIMATE : this.resourceEstimatedWorkdays(velocityMappings, rejectStatuses)
   }
 
   sumOfEstimates(rejectStatuses: Status[]): { [key: string]: SpreadEstimate } {
@@ -235,11 +304,15 @@ export class Task {
 
   calculate({ velocityMappings }: ModelParams): Object {
     return {
-      ...this,
+      ..._.omit(this, 'parent'),
       assignedResourceEstimatedWorkdays: this.assignedResourceEstimatedWorkdays(velocityMappings, []),
       unassignedResourceEstimatedWorkdays: this.unassignedResourceEstimatedWorkdays(velocityMappings, []),
       spread: this.resourceEstimator.calculateSpread(),
     }
+  }
+
+  getPossibleResources(): Resource[] {
+    return this.parent?.getPossibleResources() || []
   }
 }
 
@@ -298,5 +371,113 @@ export class SpreadEstimator implements IEstimator {
       max: this.maxEstimate,
       estimateUnit: this.estimateUnit,
     }
+  }
+}
+
+export class ScheduledTask {
+  startDate: dayjs.Dayjs
+  endDate: dayjs.Dayjs
+  task: Task
+  overrideAssignee?: Resource
+
+  constructor(startDate: dayjs.Dayjs, endDate: dayjs.Dayjs, task: Task, overrideAssignee?: Resource) {
+    this.startDate = startDate
+    this.endDate = endDate
+    this.task = task
+    this.overrideAssignee = overrideAssignee
+  }
+
+  assignee() {
+    return this.task.assignee || this.overrideAssignee
+  }
+}
+
+export type ResourceWithTasks = {
+  resource: Resource
+  tasks: ScheduledTask[]
+}
+
+export type SpreadScenario = 'min' | 'mid' | 'max'
+
+const tasksForResource = (resourcesWithTasks: ResourceWithTasks[], resource: Resource): ScheduledTask[] | undefined => {
+  return _.find(resourcesWithTasks, { resource })?.tasks
+}
+
+const resourceWorkingDaysToDate = (startDate: dayjs.Dayjs, resource: Resource, workingDays: number): dayjs.Dayjs => {
+  const upcomingDays = resource.daysAvailableToWork.filter(day => day.isSameOrAfter(startDate))
+  return upcomingDays[workingDays - 1]
+}
+
+const nextAvailableDay = (startDate: dayjs.Dayjs, resource: Resource) => {
+  return resourceWorkingDaysToDate(startDate, resource, 2)
+}
+
+const calculateStartEndDates = (
+  task: Task,
+  velocityMappings: VelocityMappings,
+  remainingRejectStatuses: Status[],
+  assignee: Resource,
+  resourcesWithTasks: ResourceWithTasks[],
+  fallbackStartDate: dayjs.Dayjs,
+  scenario: SpreadScenario,
+) => {
+  const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
+  const currentTasks = tasksForResource(resourcesWithTasks, assignee)
+  const previousTaskEnd = _.get(_.last(currentTasks), 'endDate', fallbackStartDate)
+  const nextStartDate = nextAvailableDay(previousTaskEnd, assignee)
+  const endDate = resourceWorkingDaysToDate(nextStartDate, assignee, Math.ceil(spread[scenario]))
+  return { nextStartDate, endDate }
+}
+
+const getNextAvailableResource = (
+  task: Task,
+  velocityMappings: VelocityMappings,
+  remainingRejectStatuses: Status[],
+  resourcesWithTasks: ResourceWithTasks[],
+  fallbackStartDate: dayjs.Dayjs,
+  scenario: SpreadScenario,
+): Resource => {
+  const possibleResources = task.getPossibleResources()
+  const nextAvailableResource = _.minBy(possibleResources, resource =>
+    calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, resource, resourcesWithTasks, fallbackStartDate, scenario).endDate.format(),
+  )
+  if (!nextAvailableResource) {
+    throw new Error(`could not find a resource able to perform task: ${task}`)
+  }
+  return nextAvailableResource
+}
+
+const emptyResourceTaskList = (resources: Resource[]) => {
+  return resources.map(r => ({ resource: r, tasks: [] }))
+}
+
+const generateResourceTaskList = (
+  root: TaskNode,
+  scenario: SpreadScenario,
+  { velocityMappings, remainingRejectStatuses = [Status.DONE] }: ModelParams,
+  startDate = dayjs.utc().startOf('day'),
+): ResourceWithTasks[] => {
+  const tasksTodo = root.tasksTodoInPriorityOrder()
+  const resourcesWithTasks = emptyResourceTaskList(root.getAllResources())
+  tasksTodo.forEach(task => {
+    if (task.status !== Status.NOT_STARTED && !task.assignee) {
+      throw new Error('status=STARTED tasks must have an assignee')
+    }
+    const assignee = task.assignee || getNextAvailableResource(task, velocityMappings, remainingRejectStatuses, resourcesWithTasks, startDate, scenario)
+    const { nextStartDate, endDate } = calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, assignee, resourcesWithTasks, startDate, scenario)
+    const scheduledTask = new ScheduledTask(nextStartDate, endDate, task, assignee)
+    const currentTasks = tasksForResource(resourcesWithTasks, assignee)
+
+    currentTasks?.push(scheduledTask)
+  })
+  return resourcesWithTasks
+}
+export type SpreadResourceWithTasks = { [key in SpreadScenario]: ResourceWithTasks[] }
+
+export const generateResourceTaskLists = (root: TaskNode, modelParams: ModelParams, startDate = dayjs.utc().startOf('day')): SpreadResourceWithTasks => {
+  return {
+    min: generateResourceTaskList(root, 'min', modelParams, startDate),
+    mid: generateResourceTaskList(root, 'mid', modelParams, startDate),
+    max: generateResourceTaskList(root, 'max', modelParams, startDate),
   }
 }
