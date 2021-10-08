@@ -1,5 +1,4 @@
 import _ from 'lodash'
-import { inspect } from 'util' // or directly
 import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, ScheduledTask, generateResourceTaskList } from './model'
 import { businessDayRange } from './dates'
 // import { displayTree } from './displayTree'
@@ -159,7 +158,7 @@ const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTh
 // How to handle 'lead times' / parallelization?
 // **DONE** Solution: added 'elapsedEstimate' to tasks
 
-const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
+// const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Status.DONE] })
 // console.log(JSON.stringify(result, null, 2))
 
 // displayTree(result)

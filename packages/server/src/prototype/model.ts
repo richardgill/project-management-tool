@@ -1,4 +1,5 @@
 /* eslint-disable max-classes-per-file */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 
 import _ from 'lodash'
 import dayjs from 'dayjs'
@@ -7,10 +8,6 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 
 dayjs.extend(utc)
 dayjs.extend(isSameOrAfter)
-
-const notEmpty = <TValue>(value: TValue | null | undefined): value is TValue => {
-  return value !== null && value !== undefined
-}
 
 export enum Status {
   NOT_STARTED = 'NOT_STARTED',
@@ -131,9 +128,7 @@ export class TaskNode {
     this.owner = owner
     this.resources = resources
     this.description = description
-    for (const child of this.children) {
-      child.setParent(this)
-    }
+    this.children.forEach(child => child.setParent(this))
   }
 
   setParent(parent: TaskNode) {
@@ -405,6 +400,19 @@ type ResourceWithTasks = {
 
 type SpreadScenario = 'min' | 'mid' | 'max'
 
+const tasksForResource = (resourcesWithTasks: ResourceWithTasks[], resource: Resource): ScheduledTask[] | undefined => {
+  return _.find(resourcesWithTasks, { resource })?.tasks
+}
+
+const resourceWorkingDaysToDate = (startDate: dayjs.Dayjs, resource: Resource, workingDays: number): dayjs.Dayjs => {
+  const upcomingDays = resource.daysAvailableToWork.filter(day => day.isSameOrAfter(startDate))
+  return upcomingDays[workingDays - 1]
+}
+
+const nextAvailableDay = (startDate: dayjs.Dayjs, resource: Resource) => {
+  return resourceWorkingDaysToDate(startDate, resource, 2)
+}
+
 const calculateStartEndDates = (
   task: Task,
   velocityMappings: VelocityMappings,
@@ -420,15 +428,6 @@ const calculateStartEndDates = (
   const nextStartDate = nextAvailableDay(previousTaskEnd, assignee)
   const endDate = resourceWorkingDaysToDate(nextStartDate, assignee, Math.ceil(spread[scenario]))
   return { nextStartDate, endDate }
-}
-
-const resourceWorkingDaysToDate = (startDate: dayjs.Dayjs, resource: Resource, workingDays: number): dayjs.Dayjs => {
-  const upcomingDays = resource.daysAvailableToWork.filter(day => day.isSameOrAfter(startDate))
-  return upcomingDays[workingDays - 1]
-}
-
-const nextAvailableDay = (startDate: dayjs.Dayjs, resource: Resource) => {
-  return resourceWorkingDaysToDate(startDate, resource, 2)
 }
 
 const getNextAvailableResource = (
@@ -449,10 +448,6 @@ const getNextAvailableResource = (
   return nextAvailableResource
 }
 
-const tasksForResource = (resourcesWithTasks: ResourceWithTasks[], resource: Resource): ScheduledTask[] | undefined => {
-  return _.find(resourcesWithTasks, { resource })?.tasks
-}
-
 const emptyResourceTaskList = (resources: Resource[]) => {
   return resources.map(r => ({ resource: r, tasks: [] }))
 }
@@ -466,7 +461,7 @@ export const generateResourceTaskList = (
   const tasksTodo = root.tasksTodoInPriorityOrder()
   console.log('resources', root.getAllResources())
   const resourcesWithTasks = emptyResourceTaskList(root.getAllResources())
-  for (const task of tasksTodo) {
+  tasksTodo.forEach(task => {
     if (task.status !== Status.NOT_STARTED && !task.assignee) {
       throw new Error('status=STARTED tasks must have an assignee')
     }
@@ -476,6 +471,6 @@ export const generateResourceTaskList = (
     const currentTasks = tasksForResource(resourcesWithTasks, assignee)
 
     currentTasks?.push(scheduledTask)
-  }
+  })
   return resourcesWithTasks
 }
