@@ -174,7 +174,7 @@ const taskList = generateResourceTaskList(root, 'mid', { velocityMappings, remai
 _.map(taskList, r => {
   console.log('Resource:', r.resource.handle)
   _.map(r.tasks, (t: ScheduledTask) => {
-    console.log('  ', t.task.title, t.startDate.format(), t.endDate.format())
+    console.log('  ', t.task.title, t.startDate.format(), t.endDate.format(), t.task.expectedDaysToCompletion)
     console.log('  ', t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE], t.assignee()))
   })
 })
