@@ -162,6 +162,8 @@ const result = root.calculate({ velocityMappings, remainingRejectStatuses: [Stat
 // displayTree(result)
 
 // console.log(JSON.stringify(velocityMappings, null, 2))
+
+// todo infer resources
 const taskList = generateResourceTaskList(root, [richard, yaw], 'mid', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
 
 // console.log(inspect(taskList, { depth: 19 }))
