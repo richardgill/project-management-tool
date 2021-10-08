@@ -184,6 +184,7 @@ const taskLists = generateResourceTaskLists(root, { velocityMappings, remainingR
 // console.log(inspect(taskList, { depth: 19 }))
 const printTaskList = (spreadResourceWithTasks: SpreadResourceWithTasks, scenario: SpreadScenario) => {
   console.log('\n\n')
+  console.log(scenario)
   const taskList = spreadResourceWithTasks[scenario]
   _.map(taskList, r => {
     console.log('Resource:', r.resource.handle)
