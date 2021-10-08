@@ -381,12 +381,10 @@ export class ScheduledTask {
   }
 }
 
-type ResourceTask = {
+type ResourceWithTasks = {
   resource: Resource
   tasks: ScheduledTask[]
 }
-
-type ResourceTaskList = ResourceTask[]
 
 type SpreadScenario = 'min' | 'mid' | 'max'
 
@@ -395,12 +393,12 @@ const calculateStartEndDates = (
   velocityMappings: VelocityMappings,
   remainingRejectStatuses: Status[],
   assignee: Resource,
-  resourceTaskList: { resource: Resource; tasks: never[] }[],
+  resourcesWithTasks: ResourceWithTasks[],
   fallbackStartDate: dayjs.Dayjs,
   scenario: SpreadScenario,
 ) => {
   const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
-  const currentTasks = tasksForResource(resourceTaskList, assignee)
+  const currentTasks = tasksForResource(resourcesWithTasks, assignee)
   const previousTaskEnd = _.get(_.last(currentTasks), 'endDate', fallbackStartDate)
   const nextStartDate = nextAvailableDay(previousTaskEnd, assignee)
   const endDate = resourceWorkingDaysToDate(nextStartDate, assignee, Math.ceil(spread[scenario]))
@@ -420,13 +418,13 @@ const getNextAvailableResource = (
   task: Task,
   velocityMappings: VelocityMappings,
   remainingRejectStatuses: Status[],
-  resourceTaskList: { resource: Resource; tasks: never[] }[],
+  resourcesWithTasks: ResourceWithTasks[],
   fallbackStartDate: dayjs.Dayjs,
   scenario: SpreadScenario,
 ): Resource => {
   const possibleResources = task.getResources()
   const nextAvailableResource = _.minBy(possibleResources, resource =>
-    calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, resource, resourceTaskList, fallbackStartDate, scenario).endDate.format(),
+    calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, resource, resourcesWithTasks, fallbackStartDate, scenario).endDate.format(),
   )
   if (!nextAvailableResource) {
     throw new Error(`could not find a resource able to perform task: ${task}`)
@@ -434,8 +432,8 @@ const getNextAvailableResource = (
   return nextAvailableResource
 }
 
-const tasksForResource = (resourceTaskList: ResourceTaskList, resource: Resource): ScheduledTask[] | undefined => {
-  return _.find(resourceTaskList, { resource })?.tasks
+const tasksForResource = (resourcesWithTasks: ResourceWithTasks[], resource: Resource): ScheduledTask[] | undefined => {
+  return _.find(resourcesWithTasks, { resource })?.tasks
 }
 
 const emptyResourceTaskList = (resources: Resource[]) => {
@@ -451,19 +449,19 @@ export const generateResourceTaskList = (
   { velocityMappings, remainingRejectStatuses = [Status.DONE] }: ModelParams,
   startDate = dayjs.utc().startOf('day'),
 ) => {
-  const taskList = root.tasksTodoInPriorityOrder()
-  const resourceTaskList = emptyResourceTaskList(resources)
-  for (const task of taskList) {
+  const tasksTodo = root.tasksTodoInPriorityOrder()
+  const resourcesWithTasks = emptyResourceTaskList(resources)
+  for (const task of tasksTodo) {
     if (task.status !== Status.NOT_STARTED && !task.assignee) {
       throw new Error('status=STARTED tasks must have an assignee')
     }
     // This should become smarter and pick an assignee based on availability
-    const assignee = task.assignee || getNextAvailableResource(task, velocityMappings, remainingRejectStatuses, resourceTaskList, startDate, scenario)
-    const { nextStartDate, endDate } = calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, assignee, resourceTaskList, startDate, scenario)
+    const assignee = task.assignee || getNextAvailableResource(task, velocityMappings, remainingRejectStatuses, resourcesWithTasks, startDate, scenario)
+    const { nextStartDate, endDate } = calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, assignee, resourcesWithTasks, startDate, scenario)
     const scheduledTask = new ScheduledTask(nextStartDate, endDate, task, assignee)
-    const currentTasks = tasksForResource(resourceTaskList, assignee)
+    const currentTasks = tasksForResource(resourcesWithTasks, assignee)
 
     currentTasks?.push(scheduledTask)
   }
-  return resourceTaskList
+  return resourcesWithTasks
 }
