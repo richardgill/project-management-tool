@@ -392,12 +392,12 @@ export class ScheduledTask {
   }
 }
 
-type ResourceWithTasks = {
+export type ResourceWithTasks = {
   resource: Resource
   tasks: ScheduledTask[]
 }
 
-type SpreadScenario = 'min' | 'mid' | 'max'
+export type SpreadScenario = 'min' | 'mid' | 'max'
 
 const tasksForResource = (resourcesWithTasks: ResourceWithTasks[], resource: Resource): ScheduledTask[] | undefined => {
   return _.find(resourcesWithTasks, { resource })?.tasks
@@ -451,12 +451,12 @@ const emptyResourceTaskList = (resources: Resource[]) => {
   return resources.map(r => ({ resource: r, tasks: [] }))
 }
 
-export const generateResourceTaskList = (
+const generateResourceTaskList = (
   root: TaskNode,
   scenario: SpreadScenario,
   { velocityMappings, remainingRejectStatuses = [Status.DONE] }: ModelParams,
   startDate = dayjs.utc().startOf('day'),
-) => {
+): ResourceWithTasks[] => {
   const tasksTodo = root.tasksTodoInPriorityOrder()
   const resourcesWithTasks = emptyResourceTaskList(root.getAllResources())
   tasksTodo.forEach(task => {
@@ -471,4 +471,13 @@ export const generateResourceTaskList = (
     currentTasks?.push(scheduledTask)
   })
   return resourcesWithTasks
+}
+export type SpreadResourceWithTasks = { [key in SpreadScenario]: ResourceWithTasks[] }
+
+export const generateResourceTaskLists = (root: TaskNode, modelParams: ModelParams, startDate = dayjs.utc().startOf('day')): SpreadResourceWithTasks => {
+  return {
+    min: generateResourceTaskList(root, 'min', modelParams, startDate),
+    mid: generateResourceTaskList(root, 'mid', modelParams, startDate),
+    max: generateResourceTaskList(root, 'max', modelParams, startDate),
+  }
 }

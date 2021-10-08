@@ -1,5 +1,19 @@
 import _ from 'lodash'
-import { Resource, User, VelocityMappings, EstimateUnit, Status, Task, TaskNode, RiskEstimator, SpreadEstimator, ScheduledTask, generateResourceTaskList } from './model'
+import {
+  Resource,
+  User,
+  VelocityMappings,
+  EstimateUnit,
+  Status,
+  Task,
+  TaskNode,
+  RiskEstimator,
+  SpreadEstimator,
+  ScheduledTask,
+  generateResourceTaskLists,
+  SpreadScenario,
+  SpreadResourceWithTasks,
+} from './model'
 import { businessDayRange } from './dates'
 // import { displayTree } from './displayTree'
 
@@ -166,14 +180,20 @@ const root = new TaskNode({ title: 'Klarna GA', owner: eoin, children: [finishTh
 // console.log(JSON.stringify(velocityMappings, null, 2))
 
 // todo infer resources
-const taskList = generateResourceTaskList(root, 'mid', { velocityMappings, remainingRejectStatuses: [Status.DONE] })
+const taskLists = generateResourceTaskLists(root, { velocityMappings, remainingRejectStatuses: [Status.DONE] })
 
 // console.log(inspect(taskList, { depth: 19 }))
-
-_.map(taskList, r => {
-  console.log('Resource:', r.resource.handle)
-  _.map(r.tasks, (t: ScheduledTask) => {
-    console.log('  ', t.task.title, t.startDate.format(), t.endDate.format(), t.task.expectedDaysToCompletion)
-    console.log('  ', t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE], t.assignee()))
+const printTaskList = (spreadResourceWithTasks: SpreadResourceWithTasks, scenario: SpreadScenario) => {
+  console.log('\n\n')
+  const taskList = spreadResourceWithTasks[scenario]
+  _.map(taskList, r => {
+    console.log('Resource:', r.resource.handle)
+    _.map(r.tasks, (t: ScheduledTask) => {
+      console.log('  ', t.task.title, t.startDate.format(), t.endDate.format(), 'expectedDaysToCompletion:', t.task.expectedDaysToCompletion)
+      console.log('  ', t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE], t.assignee())[scenario], 'days')
+    })
   })
-})
+}
+printTaskList(taskLists, 'min')
+printTaskList(taskLists, 'mid')
+printTaskList(taskLists, 'max')
