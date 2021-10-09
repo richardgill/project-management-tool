@@ -230,7 +230,7 @@ export class Task {
   title: string
   description?: string
   status: Status
-  expectedDaysToCompletion?: number
+  expectedWorkingDaysToCompletion?: number
   resourceEstimator: IEstimator
   assignee?: Resource
   created: dayjs.Dayjs
@@ -260,7 +260,7 @@ export class Task {
     this.status = status
     this.resourceEstimator = resourceEstimator
     this.assignee = assignee
-    this.expectedDaysToCompletion = expectedDaysToCompletion
+    this.expectedWorkingDaysToCompletion = expectedDaysToCompletion
     this.description = description
     this.created = created || dayjs()
     this.score = score
@@ -376,15 +376,19 @@ export class SpreadEstimator implements IEstimator {
 
 export class ScheduledTask {
   startDate: dayjs.Dayjs
+  effortEndDate: dayjs.Dayjs
   endDate: dayjs.Dayjs
   task: Task
   overrideAssignee?: Resource
+  percentBusy?: number
 
-  constructor(startDate: dayjs.Dayjs, endDate: dayjs.Dayjs, task: Task, overrideAssignee?: Resource) {
+  constructor(startDate: dayjs.Dayjs, effortEndDate: dayjs.Dayjs, endDate: dayjs.Dayjs, task: Task, overrideAssignee?: Resource, percentBusy?: number) {
     this.startDate = startDate
+    this.effortEndDate = effortEndDate
     this.endDate = endDate
     this.task = task
     this.overrideAssignee = overrideAssignee
+    this.percentBusy = percentBusy
   }
 
   assignee() {
@@ -412,7 +416,7 @@ const nextAvailableDay = (startDate: dayjs.Dayjs, resource: Resource) => {
   return resourceWorkingDaysToDate(startDate, resource, 2)
 }
 
-const calculateStartEndDates = (
+const calculatedScheduledTask = (
   task: Task,
   velocityMappings: VelocityMappings,
   remainingRejectStatuses: Status[],
@@ -422,11 +426,15 @@ const calculateStartEndDates = (
   scenario: SpreadScenario,
 ) => {
   const spread = task.resourceEstimatedWorkdays(velocityMappings, remainingRejectStatuses, assignee)
+  const daysOfEffortInScenario = Math.ceil(spread[scenario])
+  const totalWorkingDays = Math.max(task.expectedWorkingDaysToCompletion || 0, daysOfEffortInScenario)
   const currentTasks = tasksForResource(resourcesWithTasks, assignee)
-  const previousTaskEnd = _.get(_.last(currentTasks), 'endDate', fallbackStartDate)
-  const nextStartDate = nextAvailableDay(previousTaskEnd, assignee)
-  const endDate = resourceWorkingDaysToDate(nextStartDate, assignee, Math.ceil(spread[scenario]))
-  return { nextStartDate, endDate }
+  const previousTaskEffortEnd = _.get(_.last(currentTasks), 'effortEndDate', fallbackStartDate)
+  const nextStartDate = nextAvailableDay(previousTaskEffortEnd, assignee)
+  const percentBusy = daysOfEffortInScenario / totalWorkingDays
+  const effortEndDate = resourceWorkingDaysToDate(nextStartDate, assignee, daysOfEffortInScenario)
+  const endDate = resourceWorkingDaysToDate(nextStartDate, assignee, totalWorkingDays)
+  return new ScheduledTask(nextStartDate, effortEndDate, endDate, task, assignee, percentBusy)
 }
 
 const getNextAvailableResource = (
@@ -439,7 +447,7 @@ const getNextAvailableResource = (
 ): Resource => {
   const possibleResources = task.getPossibleResources()
   const nextAvailableResource = _.minBy(possibleResources, resource =>
-    calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, resource, resourcesWithTasks, fallbackStartDate, scenario).endDate.format(),
+    calculatedScheduledTask(task, velocityMappings, remainingRejectStatuses, resource, resourcesWithTasks, fallbackStartDate, scenario).endDate.format(),
   )
   if (!nextAvailableResource) {
     throw new Error(`could not find a resource able to perform task: ${task}`)
@@ -464,10 +472,8 @@ const generateResourceTaskList = (
       throw new Error('status=STARTED tasks must have an assignee')
     }
     const assignee = task.assignee || getNextAvailableResource(task, velocityMappings, remainingRejectStatuses, resourcesWithTasks, startDate, scenario)
-    const { nextStartDate, endDate } = calculateStartEndDates(task, velocityMappings, remainingRejectStatuses, assignee, resourcesWithTasks, startDate, scenario)
-    const scheduledTask = new ScheduledTask(nextStartDate, endDate, task, assignee)
+    const scheduledTask = calculatedScheduledTask(task, velocityMappings, remainingRejectStatuses, assignee, resourcesWithTasks, startDate, scenario)
     const currentTasks = tasksForResource(resourcesWithTasks, assignee)
-
     currentTasks?.push(scheduledTask)
   })
   return resourcesWithTasks
