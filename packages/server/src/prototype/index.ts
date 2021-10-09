@@ -15,7 +15,7 @@ import {
   SpreadResourceWithTasks,
 } from './model'
 import { businessDayRange } from './dates'
-import { displayTree } from './displayTree'
+import { displayTree, displayGanttChart } from './display'
 
 // Users
 const eoin = new User('enugent', 'Eoin')
@@ -111,3 +111,5 @@ const printTaskList = (spreadResourceWithTasks: SpreadResourceWithTasks, scenari
 printTaskList(taskLists, 'min')
 printTaskList(taskLists, 'mid')
 printTaskList(taskLists, 'max')
+
+displayGanttChart(taskLists)
