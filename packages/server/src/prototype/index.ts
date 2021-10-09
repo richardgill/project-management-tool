@@ -40,6 +40,7 @@ const upeDocs = new Task({
   status: Status.NOT_STARTED,
   resourceEstimator: new SpreadEstimator(EstimateUnit.STORY_POINTS, 2, 3, 4),
   expectedDaysToCompletion: 10,
+  score: 50,
 })
 const connectDocs = new Task({
   title: 'Ungate `klarna_payments`',
@@ -90,13 +91,23 @@ const printTaskList = (spreadResourceWithTasks: SpreadResourceWithTasks, scenari
   console.log(scenario)
   const taskList = spreadResourceWithTasks[scenario]
   _.map(taskList, r => {
-    console.log('Resource:', r.resource.handle)
+    console.log('\nResource:', r.resource.handle)
     _.map(r.tasks, (t: ScheduledTask) => {
-      console.log('  ', t.task.title, t.startDate.format(), t.endDate.format(), 'expectedDaysToCompletion:', t.task.expectedDaysToCompletion)
+      console.log(
+        '\n   ',
+        t.task.title,
+        t.startDate.format(),
+        t.effortEndDate.format(),
+        t.endDate.format(),
+        'expectedDaysToCompletion:',
+        t.task.expectedWorkingDaysToCompletion,
+        t.percentBusy,
+      )
       console.log('  ', t.task.resourceEstimatedWorkdays(velocityMappings, [Status.DONE], t.assignee())[scenario], 'days')
     })
   })
 }
+
 printTaskList(taskLists, 'min')
 printTaskList(taskLists, 'mid')
 printTaskList(taskLists, 'max')
