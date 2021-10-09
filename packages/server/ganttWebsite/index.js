@@ -13,12 +13,28 @@
 //   ['Hockey', 'Hockey Season', 'sports', new Date(2014, 9, 8), new Date(2015, 5, 21), null, 89, null],
 // ]
 
-const taskToGantRow = (resource, task) => {
-  return [task.task.title, task.task.title, resource.name, dayjs(task.startDate).toDate(), dayjs(task.endDate).toDate(), null, 100, null]
+const taskToGanttRow = task => {
+  return [
+    task.task.title,
+    task.task.title,
+    task.overrideAssignee.name,
+    dayjs(task.startDate).toDate(),
+    dayjs(task.endDate).toDate(),
+    null,
+    task.percentBusy * 100,
+    task.overrideAssignee.name,
+  ]
+}
+const resourceToGanttRow = resource => {
+  return [resource.name, resource.name, null, null, null, 0, null, null]
 }
 
-const drawChart = resourceTaskList => {
-  console.log(resourceTaskList)
+const taskListsToRows = taskLists => {
+  return taskLists.flatMap(({ resource, tasks }) => [resourceToGanttRow(resource), ...tasks.map(t => taskToGanttRow(t))])
+}
+
+const drawChart = resourceTaskLists => {
+  console.log(resourceTaskLists)
 
   var data = new google.visualization.DataTable()
   data.addColumn('string', 'Task ID')
@@ -30,18 +46,24 @@ const drawChart = resourceTaskList => {
   data.addColumn('number', 'Percent Complete')
   data.addColumn('string', 'Dependencies')
 
-  data.addRows(resourceTaskList.tasks.map(t => taskToGantRow(resourceTaskList.resource, t)))
+  data.addRows(taskListsToRows(resourceTaskLists))
 
   var options = {
-    // height: 400,
+    height: 400,
     gantt: {
       trackHeight: 30,
+      arrow: {
+        angle: 100,
+        width: 0,
+        color: 'green',
+        radius: 0,
+      },
     },
   }
   var container = document.createElement('div')
   var chartTitle = document.createElement('h1')
 
-  chartTitle.innerText = resourceTaskList.resource.name
+  chartTitle.innerText = 'Gantt Chart'
   var chartContainer = document.createElement('div')
   container.appendChild(chartTitle)
   container.appendChild(chartContainer)
@@ -51,11 +73,5 @@ const drawChart = resourceTaskList => {
   chart.draw(data, options)
 }
 
-const drawCharts = () => {
-  for (resourceTaskList of ganttChartData['mid']) {
-    drawChart(resourceTaskList)
-  }
-}
-
 google.charts.load('current', { packages: ['gantt'] })
-google.charts.setOnLoadCallback(drawCharts)
+google.charts.setOnLoadCallback(() => drawChart(ganttChartData['mid']))

@@ -413,7 +413,7 @@ const resourceWorkingDaysToDate = (startDate: dayjs.Dayjs, resource: Resource, w
 }
 
 const nextAvailableDay = (startDate: dayjs.Dayjs, resource: Resource) => {
-  return resourceWorkingDaysToDate(startDate, resource, 2)
+  return resourceWorkingDaysToDate(startDate, resource, 1)
 }
 
 const calculatedScheduledTask = (

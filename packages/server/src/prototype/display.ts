@@ -1,13 +1,11 @@
 import fs from 'fs'
-import { inspect } from 'util'
 import bopen from 'bopen'
 
 const getCircularReplacer = function(key: any, value: any) {
-  if (key == 'parent') {
+  if (key === 'parent') {
     return value.id
-  } else {
-    return value
   }
+  return value
 }
 
 export const displayTree = async (taskNode: any) => {
