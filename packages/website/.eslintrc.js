@@ -5,7 +5,7 @@ const isCI = _.toLower(process.env.CI) === 'true'
 module.exports = {
   extends: ['airbnb-typescript', 'airbnb/hooks', 'prettier', 'prettier/@typescript-eslint'],
   parserOptions: {
-    project: './tsconfig.json'
+    project: './tsconfig.json',
   },
   rules: {
     'no-return-await': 'off',
@@ -24,6 +24,7 @@ module.exports = {
     'import/order': isCI ? 'error' : 'warn',
     'prefer-arrow-callback': 'error',
     'react/jsx-curly-brace-presence': 'off',
-    'func-style': ['error', 'expression', { allowArrowFunctions: true }]
-  }
+    'func-style': ['error', 'expression', { allowArrowFunctions: true }],
+  },
+  ignorePatterns: ['src/generated/**/*'],
 }

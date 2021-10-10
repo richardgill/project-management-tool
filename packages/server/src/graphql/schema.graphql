@@ -1,41 +1,18 @@
-type Recipe {
-  markdownTemplate: String!
-  javascriptCode: String!
-  title: String!
-  slug: String!
-  id: String!
-  userName: String
-  userId: String!
+type Resource {
+  resourceId: String!
+  handle: String!
 }
 
-input RecipeUpdate {
-  markdownTemplate: String
-  javascriptCode: String
-  title: String
-  slug: String
-}
-
-type User {
-  id: String!
-  userName: String
-}
-input UserUpdate {
-  userName: String
+input ResourceUpdate {
+  handle: String!
 }
 
 type Query {
-  userRecipes(userName: String): [Recipe!]!
-  recipeByNameAndSlug(userName: String!, recipeSlug: String!): Recipe!
-  recipe(userId: String!, recipeId: String!): Recipe!
-  user(userId: String): User!
+  resource(resourceId: String!): Resource!
 }
 
 type Mutation {
-  createRecipe(userId: String, recipe: RecipeUpdate): Recipe!
-  remixRecipe(userId: String!, recipeId: String!): Recipe!
-  updateRecipe(userId: String, recipeId: String!, recipe: RecipeUpdate!): Recipe!
-  deleteRecipe(userId: String, recipeId: String!): Recipe!
-  updateUser(userId: String, user: UserUpdate!): User!
+  createResource(userId: String, resource: ResourceUpdate!): Resource!
 }
 
 schema {

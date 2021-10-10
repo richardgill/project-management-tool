@@ -1,0 +1,10 @@
+fragment Resource on Resource {
+  resourceId
+  handle
+}
+
+query FindResourceById($resourceId: String!) {
+  resource(resourceId: $resourceId) {
+    ...Resource
+  }
+}

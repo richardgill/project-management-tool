@@ -1,243 +1,133 @@
-import { GraphQLResolveInfo } from 'graphql';
-export type Maybe<T> = T | null;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type RequireFields<T, K extends keyof T> = { [X in Exclude<keyof T, K>]?: T[X] } & { [P in K]-?: NonNullable<T[P]> };
+import { GraphQLResolveInfo } from 'graphql'
+export type Maybe<T> = T | null
+export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] }
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> }
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> }
+export type RequireFields<T, K extends keyof T> = { [X in Exclude<keyof T, K>]?: T[X] } & { [P in K]-?: NonNullable<T[P]> }
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: string;
-  String: string;
-  Boolean: boolean;
-  Int: number;
-  Float: number;
-};
+  ID: string
+  String: string
+  Boolean: boolean
+  Int: number
+  Float: number
+}
 
 export type Mutation = {
-  __typename?: 'Mutation';
-  createRecipe: Recipe;
-  deleteRecipe: Recipe;
-  remixRecipe: Recipe;
-  updateRecipe: Recipe;
-  updateUser: User;
-};
+  __typename?: 'Mutation'
+  createResource: Resource
+}
 
-
-export type MutationCreateRecipeArgs = {
-  recipe?: Maybe<RecipeUpdate>;
-  userId?: Maybe<Scalars['String']>;
-};
-
-
-export type MutationDeleteRecipeArgs = {
-  recipeId: Scalars['String'];
-  userId?: Maybe<Scalars['String']>;
-};
-
-
-export type MutationRemixRecipeArgs = {
-  recipeId: Scalars['String'];
-  userId: Scalars['String'];
-};
-
-
-export type MutationUpdateRecipeArgs = {
-  recipe: RecipeUpdate;
-  recipeId: Scalars['String'];
-  userId?: Maybe<Scalars['String']>;
-};
-
-
-export type MutationUpdateUserArgs = {
-  user: UserUpdate;
-  userId?: Maybe<Scalars['String']>;
-};
+export type MutationCreateResourceArgs = {
+  resource: ResourceUpdate
+  userId?: Maybe<Scalars['String']>
+}
 
 export type Query = {
-  __typename?: 'Query';
-  recipe: Recipe;
-  recipeByNameAndSlug: Recipe;
-  user: User;
-  userRecipes: Array<Recipe>;
-};
+  __typename?: 'Query'
+  resource: Resource
+}
 
+export type QueryResourceArgs = {
+  resourceId: Scalars['String']
+}
 
-export type QueryRecipeArgs = {
-  recipeId: Scalars['String'];
-  userId: Scalars['String'];
-};
+export type Resource = {
+  __typename?: 'Resource'
+  handle: Scalars['String']
+  resourceId: Scalars['String']
+}
 
+export type ResourceUpdate = {
+  handle: Scalars['String']
+}
 
-export type QueryRecipeByNameAndSlugArgs = {
-  recipeSlug: Scalars['String'];
-  userName: Scalars['String'];
-};
-
-
-export type QueryUserArgs = {
-  userId?: Maybe<Scalars['String']>;
-};
-
-
-export type QueryUserRecipesArgs = {
-  userName?: Maybe<Scalars['String']>;
-};
-
-export type Recipe = {
-  __typename?: 'Recipe';
-  id: Scalars['String'];
-  javascriptCode: Scalars['String'];
-  markdownTemplate: Scalars['String'];
-  slug: Scalars['String'];
-  title: Scalars['String'];
-  userId: Scalars['String'];
-  userName?: Maybe<Scalars['String']>;
-};
-
-export type RecipeUpdate = {
-  javascriptCode?: Maybe<Scalars['String']>;
-  markdownTemplate?: Maybe<Scalars['String']>;
-  slug?: Maybe<Scalars['String']>;
-  title?: Maybe<Scalars['String']>;
-};
-
-export type User = {
-  __typename?: 'User';
-  id: Scalars['String'];
-  userName?: Maybe<Scalars['String']>;
-};
-
-export type UserUpdate = {
-  userName?: Maybe<Scalars['String']>;
-};
-
-
-
-export type ResolverTypeWrapper<T> = Promise<T> | T;
-
+export type ResolverTypeWrapper<T> = Promise<T> | T
 
 export type ResolverWithResolve<TResult, TParent, TContext, TArgs> = {
-  resolve: ResolverFn<TResult, TParent, TContext, TArgs>;
-};
-export type Resolver<TResult, TParent = {}, TContext = {}, TArgs = {}> = ResolverFn<TResult, TParent, TContext, TArgs> | ResolverWithResolve<TResult, TParent, TContext, TArgs>;
+  resolve: ResolverFn<TResult, TParent, TContext, TArgs>
+}
+export type Resolver<TResult, TParent = {}, TContext = {}, TArgs = {}> = ResolverFn<TResult, TParent, TContext, TArgs> | ResolverWithResolve<TResult, TParent, TContext, TArgs>
 
-export type ResolverFn<TResult, TParent, TContext, TArgs> = (
-  parent: TParent,
-  args: TArgs,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => Promise<TResult> | TResult;
+export type ResolverFn<TResult, TParent, TContext, TArgs> = (parent: TParent, args: TArgs, context: TContext, info: GraphQLResolveInfo) => Promise<TResult> | TResult
 
 export type SubscriptionSubscribeFn<TResult, TParent, TContext, TArgs> = (
   parent: TParent,
   args: TArgs,
   context: TContext,
-  info: GraphQLResolveInfo
-) => AsyncIterator<TResult> | Promise<AsyncIterator<TResult>>;
+  info: GraphQLResolveInfo,
+) => AsyncIterator<TResult> | Promise<AsyncIterator<TResult>>
 
-export type SubscriptionResolveFn<TResult, TParent, TContext, TArgs> = (
-  parent: TParent,
-  args: TArgs,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => TResult | Promise<TResult>;
+export type SubscriptionResolveFn<TResult, TParent, TContext, TArgs> = (parent: TParent, args: TArgs, context: TContext, info: GraphQLResolveInfo) => TResult | Promise<TResult>
 
 export interface SubscriptionSubscriberObject<TResult, TKey extends string, TParent, TContext, TArgs> {
-  subscribe: SubscriptionSubscribeFn<{ [key in TKey]: TResult }, TParent, TContext, TArgs>;
-  resolve?: SubscriptionResolveFn<TResult, { [key in TKey]: TResult }, TContext, TArgs>;
+  subscribe: SubscriptionSubscribeFn<{ [key in TKey]: TResult }, TParent, TContext, TArgs>
+  resolve?: SubscriptionResolveFn<TResult, { [key in TKey]: TResult }, TContext, TArgs>
 }
 
 export interface SubscriptionResolverObject<TResult, TParent, TContext, TArgs> {
-  subscribe: SubscriptionSubscribeFn<any, TParent, TContext, TArgs>;
-  resolve: SubscriptionResolveFn<TResult, any, TContext, TArgs>;
+  subscribe: SubscriptionSubscribeFn<any, TParent, TContext, TArgs>
+  resolve: SubscriptionResolveFn<TResult, any, TContext, TArgs>
 }
 
 export type SubscriptionObject<TResult, TKey extends string, TParent, TContext, TArgs> =
   | SubscriptionSubscriberObject<TResult, TKey, TParent, TContext, TArgs>
-  | SubscriptionResolverObject<TResult, TParent, TContext, TArgs>;
+  | SubscriptionResolverObject<TResult, TParent, TContext, TArgs>
 
 export type SubscriptionResolver<TResult, TKey extends string, TParent = {}, TContext = {}, TArgs = {}> =
   | ((...args: any[]) => SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>)
-  | SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>;
+  | SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>
 
-export type TypeResolveFn<TTypes, TParent = {}, TContext = {}> = (
-  parent: TParent,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => Maybe<TTypes> | Promise<Maybe<TTypes>>;
+export type TypeResolveFn<TTypes, TParent = {}, TContext = {}> = (parent: TParent, context: TContext, info: GraphQLResolveInfo) => Maybe<TTypes> | Promise<Maybe<TTypes>>
 
-export type IsTypeOfResolverFn<T = {}, TContext = {}> = (obj: T, context: TContext, info: GraphQLResolveInfo) => boolean | Promise<boolean>;
+export type IsTypeOfResolverFn<T = {}, TContext = {}> = (obj: T, context: TContext, info: GraphQLResolveInfo) => boolean | Promise<boolean>
 
-export type NextResolverFn<T> = () => Promise<T>;
+export type NextResolverFn<T> = () => Promise<T>
 
 export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs = {}> = (
   next: NextResolverFn<TResult>,
   parent: TParent,
   args: TArgs,
   context: TContext,
-  info: GraphQLResolveInfo
-) => TResult | Promise<TResult>;
+  info: GraphQLResolveInfo,
+) => TResult | Promise<TResult>
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
-  Boolean: ResolverTypeWrapper<Scalars['Boolean']>;
-  Mutation: ResolverTypeWrapper<{}>;
-  Query: ResolverTypeWrapper<{}>;
-  Recipe: ResolverTypeWrapper<Recipe>;
-  RecipeUpdate: RecipeUpdate;
-  String: ResolverTypeWrapper<Scalars['String']>;
-  User: ResolverTypeWrapper<User>;
-  UserUpdate: UserUpdate;
-};
+  Boolean: ResolverTypeWrapper<Scalars['Boolean']>
+  Mutation: ResolverTypeWrapper<{}>
+  Query: ResolverTypeWrapper<{}>
+  Resource: ResolverTypeWrapper<Resource>
+  ResourceUpdate: ResourceUpdate
+  String: ResolverTypeWrapper<Scalars['String']>
+}
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
-  Boolean: Scalars['Boolean'];
-  Mutation: {};
-  Query: {};
-  Recipe: Recipe;
-  RecipeUpdate: RecipeUpdate;
-  String: Scalars['String'];
-  User: User;
-  UserUpdate: UserUpdate;
-};
+  Boolean: Scalars['Boolean']
+  Mutation: {}
+  Query: {}
+  Resource: Resource
+  ResourceUpdate: ResourceUpdate
+  String: Scalars['String']
+}
 
 export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
-  createRecipe?: Resolver<ResolversTypes['Recipe'], ParentType, ContextType, RequireFields<MutationCreateRecipeArgs, never>>;
-  deleteRecipe?: Resolver<ResolversTypes['Recipe'], ParentType, ContextType, RequireFields<MutationDeleteRecipeArgs, 'recipeId'>>;
-  remixRecipe?: Resolver<ResolversTypes['Recipe'], ParentType, ContextType, RequireFields<MutationRemixRecipeArgs, 'recipeId' | 'userId'>>;
-  updateRecipe?: Resolver<ResolversTypes['Recipe'], ParentType, ContextType, RequireFields<MutationUpdateRecipeArgs, 'recipe' | 'recipeId'>>;
-  updateUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationUpdateUserArgs, 'user'>>;
-};
+  createResource?: Resolver<ResolversTypes['Resource'], ParentType, ContextType, RequireFields<MutationCreateResourceArgs, 'resource'>>
+}
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
-  recipe?: Resolver<ResolversTypes['Recipe'], ParentType, ContextType, RequireFields<QueryRecipeArgs, 'recipeId' | 'userId'>>;
-  recipeByNameAndSlug?: Resolver<ResolversTypes['Recipe'], ParentType, ContextType, RequireFields<QueryRecipeByNameAndSlugArgs, 'recipeSlug' | 'userName'>>;
-  user?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<QueryUserArgs, never>>;
-  userRecipes?: Resolver<Array<ResolversTypes['Recipe']>, ParentType, ContextType, RequireFields<QueryUserRecipesArgs, never>>;
-};
+  resource?: Resolver<ResolversTypes['Resource'], ParentType, ContextType, RequireFields<QueryResourceArgs, 'resourceId'>>
+}
 
-export type RecipeResolvers<ContextType = any, ParentType extends ResolversParentTypes['Recipe'] = ResolversParentTypes['Recipe']> = {
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  javascriptCode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  markdownTemplate?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  slug?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  userName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-};
-
-export type UserResolvers<ContextType = any, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  userName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-};
+export type ResourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Resource'] = ResolversParentTypes['Resource']> = {
+  handle?: Resolver<ResolversTypes['String'], ParentType, ContextType>
+  resourceId?: Resolver<ResolversTypes['String'], ParentType, ContextType>
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>
+}
 
 export type Resolvers<ContextType = any> = {
-  Mutation?: MutationResolvers<ContextType>;
-  Query?: QueryResolvers<ContextType>;
-  Recipe?: RecipeResolvers<ContextType>;
-  User?: UserResolvers<ContextType>;
-};
-
+  Mutation?: MutationResolvers<ContextType>
+  Query?: QueryResolvers<ContextType>
+  Resource?: ResourceResolvers<ContextType>
+}
