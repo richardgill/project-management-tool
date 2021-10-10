@@ -1,12 +1,13 @@
 {
   "devDependencies": {
     "@graphql-codegen/cli": "2.2.0",
-    "husky": "^4.2.5",
-    "lerna": "^4.0.0",
     "@graphql-codegen/typescript": "2.2.2",
     "@graphql-codegen/typescript-operations": "2.1.5",
+    "@graphql-codegen/typescript-react-query": "^3.0.1",
     "@graphql-codegen/typescript-resolvers": "2.2.1",
-    "@graphql-codegen/typescript-react-apollo": "2.2.2",
+    "husky": "^4.2.5",
+    "lerna": "^4.0.0",
+    "prettier": "^2.4.1",
     "typescript": "^4.4.3"
   },
   "name": "recipes",
@@ -25,6 +26,9 @@
     "node": ">= 16.10 < 17"
   },
   "dependencies": {
-    "graphql": "^15.6.0"
+    "graphql": "^15.6.1"
+  },
+  "resolutions": {
+    "graphql": "^15.6.1"
   }
 }

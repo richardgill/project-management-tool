@@ -1,15 +1,14 @@
-import React, { useContext, useEffect } from 'react'
-import { UserContext } from '../Context'
-import HowItWorks from './HowItWorks'
+import React from 'react'
+import { useFindResourceByIdQuery } from '../../generated/graphql'
 
-export default (props: any) => {
-  const user = useContext(UserContext)
-  useEffect(() => {
-    console.log('user', user)
-    if (user && !user?.isLoadingUserName && !user?.isAnonymous) {
-      props.history.push('/my-recipes')
-    }
-  }, [user])
-
-  return <HowItWorks history={props.history} />
+export const LandingPage = () => {
+  const { status, data, error, isFetching } = useFindResourceByIdQuery({ resourceId: 'resourceIdq23' })
+  return (
+    <>
+      <div>{isFetching}</div>
+      <div>{JSON.stringify(error)}</div>
+      <div>{status}</div>
+      <div>{JSON.stringify(data)}</div>
+    </>
+  )
 }

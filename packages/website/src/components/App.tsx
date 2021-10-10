@@ -1,22 +1,12 @@
 import React from 'react'
-import { ApolloProvider } from '@apollo/react-hooks'
-import { ThemeProvider as MuiThemeProvider } from '@material-ui/core/styles'
-import { ThemeProvider } from 'styled-components'
+import { QueryClientProvider, QueryClient } from 'react-query'
 import Router from './Router'
-import apolloClient from '../lib/apolloClient'
-import { theme } from '../styles/theme'
-import Context from './Context'
 
-export default () => {
+const queryClient = new QueryClient()
+export const App = () => {
   return (
-    <MuiThemeProvider theme={theme}>
-      <ThemeProvider theme={theme}>
-        <ApolloProvider client={apolloClient}>
-          <Context>
-            <Router />
-          </Context>
-        </ApolloProvider>
-      </ThemeProvider>
-    </MuiThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <Router />
+    </QueryClientProvider>
   )
 }
