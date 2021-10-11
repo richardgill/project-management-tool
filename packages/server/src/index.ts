@@ -1,10 +1,12 @@
 import express from 'express'
 import { graphqlHTTP } from 'express-graphql'
+import { addResolversToSchema } from '@graphql-tools/schema'
 import path from 'path'
 import cors from 'cors'
 import { schema } from './graphql/server'
 import { resolvers } from './graphql/resolvers'
 // eslint-disable-next-line import/newline-after-import
+const schemaWithResolvers = addResolversToSchema(schema, resolvers)
 ;(async () => {
   const app = express()
   if (process.env.ENABLE_CORS === 'true') {
@@ -14,8 +16,8 @@ import { resolvers } from './graphql/resolvers'
   app.use(
     '/graphql',
     graphqlHTTP({
-      schema,
-      rootValue: { ...resolvers.Query, ...resolvers.Mutation },
+      schema: schemaWithResolvers,
+      // rootValue: { ...resolvers.Query, ...resolvers.Mutation },
       graphiql: true,
     }),
   )
