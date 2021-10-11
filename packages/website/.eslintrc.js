@@ -26,5 +26,5 @@ module.exports = {
     'react/jsx-curly-brace-presence': 'off',
     'func-style': ['error', 'expression', { allowArrowFunctions: true }],
   },
-  ignorePatterns: ['src/generated/**/*'],
+  ignorePatterns: ['src/generated/**/*', 'craco.config.js', 'tailwind.config.js'],
 }
