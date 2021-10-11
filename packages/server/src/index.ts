@@ -2,8 +2,7 @@ import express from 'express'
 import { graphqlHTTP } from 'express-graphql'
 import path from 'path'
 import cors from 'cors'
-import { schema } from './graphql/server'
-import { resolvers } from './graphql/resolvers'
+import { schemaWithResolvers } from './graphql/server'
 // eslint-disable-next-line import/newline-after-import
 ;(async () => {
   const app = express()
@@ -14,8 +13,7 @@ import { resolvers } from './graphql/resolvers'
   app.use(
     '/graphql',
     graphqlHTTP({
-      schema,
-      rootValue: { ...resolvers.Query, ...resolvers.Mutation },
+      schema: schemaWithResolvers,
       graphiql: true,
     }),
   )
