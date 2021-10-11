@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "EXTEND_ESLINT=true react-app-rewired build",
+    "build": "EXTEND_ESLINT=true craco build",
     "check:node": "check-node-version --package",
     "ci": "CI=TRUE yarn build && CI=TRUE yarn test",
     "format:js": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md}'",
     "postinstall": "yarn run check:node",
     "lint": "CI=TRUE eslint --ext ts,tsx,js,jsx ./src",
     "precommit": "CI=TRUE lint-staged",
-    "start": "EXTEND_ESLINT=true react-app-rewired start",
-    "test": "react-app-rewired test"
+    "start": "EXTEND_ESLINT=true craco start",
+    "test": "craco test"
   },
   "husky": {
     "hooks": {
@@ -45,11 +45,13 @@
     ]
   },
   "dependencies": {
+    "@craco/craco": "^6.3.0",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
     "ace-builds": "^1.4.11",
     "apollo-boost": "^0.4.9",
+    "autoprefixer": "^9",
     "check-node-version": "^4.0.1",
     "firebase": "^7.14.2",
     "github-markdown-css": "^4.0.0",
@@ -59,10 +61,10 @@
     "husky": "^3.0.5",
     "lint-staged": "^9.2.5",
     "pluralize": "^8.0.0",
+    "postcss": "^7",
     "prettier": "^1.18.2",
     "react": "^17.0.2",
     "react-ace": "^8.1.0",
-    "react-app-rewired": "^2.1.8",
     "react-dom": "^17.0.2",
     "react-helmet": "^6.0.0",
     "react-markdown": "^4.3.1",
@@ -71,6 +73,7 @@
     "react-scripts": "4.0.3",
     "react-split-pane": "^0.1.91",
     "sort-package-json": "^1.22.1",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat",
     "typeface-roboto": "^0.0.75",
     "typescript": "^4.4.3",
     "urijs": "^1.19.2",
@@ -88,14 +91,16 @@
     "@types/react-helmet": "^5.0.15",
     "@types/react-router-dom": "^5.3.0",
     "@types/urijs": "^1.19.8",
-    "@typescript-eslint/eslint-plugin": "^2.24.0",
-    "apollo": "^2.27.3",
-    "eslint-config-airbnb-typescript": "^7.2.1",
+    "@typescript-eslint/eslint-plugin": "^4.29.3",
+    "@typescript-eslint/parser": "^4.29.3",
+    "eslint": "^7.2.0",
+    "eslint-config-airbnb": "18.2.1",
+    "eslint-config-airbnb-typescript": "^14.0.1",
     "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-import": "^2.20.1",
-    "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-react": "^7.19.0",
-    "eslint-plugin-react-hooks": "^2.5.0"
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-react": "^7.21.5",
+    "eslint-plugin-react-hooks": "^1.7.0"
   },
   "engines": {
     "node": ">= 16.10 < 17"

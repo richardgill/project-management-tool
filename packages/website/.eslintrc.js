@@ -3,7 +3,7 @@ const _ = require('lodash')
 const isCI = _.toLower(process.env.CI) === 'true'
 
 module.exports = {
-  extends: ['airbnb-typescript', 'airbnb/hooks', 'prettier', 'prettier/@typescript-eslint'],
+  extends: ['airbnb', 'airbnb-typescript', 'prettier', 'prettier/@typescript-eslint'],
   parserOptions: {
     project: './tsconfig.json',
   },
@@ -26,5 +26,5 @@ module.exports = {
     'react/jsx-curly-brace-presence': 'off',
     'func-style': ['error', 'expression', { allowArrowFunctions: true }],
   },
-  ignorePatterns: ['src/generated/**/*'],
+  ignorePatterns: ['src/generated/**/*', 'craco.config.js', 'tailwind.config.js'],
 }

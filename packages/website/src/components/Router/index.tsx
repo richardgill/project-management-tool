@@ -3,7 +3,7 @@ import React, { ComponentType } from 'react'
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 import URI from 'urijs'
 
-import { LandingPage } from '../pages/Landing'
+import { LandingPage } from 'components/pages/Landing'
 
 export const routes: { path: string; component: ComponentType; props?: object }[] = [
   {
