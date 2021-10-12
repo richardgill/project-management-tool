@@ -10,7 +10,7 @@
     "prettier": "^2.4.1",
     "typescript": "^4.4.3"
   },
-  "name": "recipes",
+  "name": "project-management",
   "scripts": {
     "build": "yarn lerna bootstrap && (cd packages/website && yarn build) && cp -r packages/website/build packages/server/website && (cd packages/server && yarn build)",
     "ci": "lerna run ci",
