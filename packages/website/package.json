@@ -1,9 +1,9 @@
 {
-  "name": "recipes-website",
+  "name": "project-management-website",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "EXTEND_ESLINT=true craco build",
+    "build": "yarn build:tailwind && EXTEND_ESLINT=true craco build",
     "build:tailwind": "NODE_ENV=production npx tailwindcss-cli@latest -o ./src/generated/temp/tailwindOutput.css && node_modules/.bin/tailwind-override --inputFile ./src/generated/temp/tailwindOutput.css --outputFile ./src/generated/temp/tailwindProperties.json",
     "check:node": "check-node-version --package",
     "ci": "CI=TRUE yarn build && CI=TRUE yarn test",
