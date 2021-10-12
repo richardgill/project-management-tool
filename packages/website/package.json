@@ -1,9 +1,10 @@
 {
-  "name": "recipes-website",
+  "name": "project-management-website",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "EXTEND_ESLINT=true craco build",
+    "build": "yarn build:tailwind && EXTEND_ESLINT=true craco build",
+    "build:tailwind": "NODE_ENV=production npx tailwindcss-cli@latest -o ./src/generated/temp/tailwindOutput.css && node_modules/.bin/tailwind-override --inputFile ./src/generated/temp/tailwindOutput.css --outputFile ./src/generated/temp/tailwindProperties.json",
     "check:node": "check-node-version --package",
     "ci": "CI=TRUE yarn build && CI=TRUE yarn test",
     "format:js": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md}'",
@@ -69,6 +70,7 @@
     "react-scripts": "4.0.3",
     "react-split-pane": "^0.1.91",
     "sort-package-json": "^1.22.1",
+    "tailwind-override": "^0.2.3",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat",
     "typescript": "^4.4.3",
     "urijs": "^1.19.2",
@@ -93,7 +95,8 @@
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jsx-a11y": "^6.4.1",
     "eslint-plugin-react": "^7.21.5",
-    "eslint-plugin-react-hooks": "^1.7.0"
+    "eslint-plugin-react-hooks": "^1.7.0",
+    "tailwind-override-cli": "^0.2.2"
   },
   "engines": {
     "node": ">= 16.10 < 17"
