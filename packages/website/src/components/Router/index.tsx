@@ -1,5 +1,4 @@
 import React, { ComponentType } from 'react'
-import _ from 'lodash'
 import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom'
 import URI from 'urijs'
 
