@@ -3,7 +3,7 @@ import { classNames } from 'lib/classNames'
 import { useFindResourceByIdQuery } from 'generated/graphql'
 import { Shell } from 'components/core/Shell'
 
-export const LandingPage = () => {
+export const ResourcesPage = () => {
   const { status, data, error, isFetching } = useFindResourceByIdQuery({ resourceId: 'resourceIdq23' })
   return (
     <Shell>

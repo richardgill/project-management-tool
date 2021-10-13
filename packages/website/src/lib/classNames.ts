@@ -1,6 +1,6 @@
 import { tailwindOverrideClasses } from './tailwindOverride'
 
-export const classNames = (...classes: any[]) => {
+export const classNames = (...classes: any[]): string => {
   return classes.filter(Boolean).join(' ')
 }
 

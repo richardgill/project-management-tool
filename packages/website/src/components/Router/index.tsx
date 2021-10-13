@@ -1,14 +1,28 @@
-import _ from 'lodash'
 import React, { ComponentType } from 'react'
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
+import _ from 'lodash'
+import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom'
 import URI from 'urijs'
 
-import { LandingPage } from 'components/pages/Landing'
+import { TreePage } from 'components/pages/Tree'
+import { ResourcesPage } from 'components/pages/Resources'
+import { SettingsPage } from 'components/pages/Settings'
 
 export const routes: { path: string; component: ComponentType; props?: object }[] = [
   {
+    path: '/settings',
+    component: SettingsPage,
+  },
+  {
+    path: '/resources',
+    component: ResourcesPage,
+  },
+  {
+    path: '/tree',
+    component: TreePage,
+  },
+  {
     path: '/',
-    component: LandingPage,
+    component: () => <Redirect to="/tree" />,
   },
 ]
 
@@ -16,7 +30,7 @@ export default () => {
   return (
     <Router>
       <Switch>
-        {_.map(routes, route => {
+        {routes.map(route => {
           return (
             <Route
               key={route.path}

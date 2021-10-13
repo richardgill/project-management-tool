@@ -6,7 +6,7 @@ export const Shell = ({ children }: { children: ReactNode }) => {
   return (
     <>
       <Menu />
-      <Container>{children}</Container>
+      <Container className="py-6">{children}</Container>
     </>
   )
 }

@@ -1,18 +1,19 @@
 /* This example requires Tailwind CSS v2.0+ */
 import React, { Fragment } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Disclosure, Menu as MenuComponent, Transition } from '@headlessui/react'
-import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline'
-import { Container } from './Container'
+import { CogIcon, MenuIcon, XIcon } from '@heroicons/react/outline'
 import { classNames } from 'lib/classNames'
+import { Container } from './Container'
 
-const navigation = [
-  { name: 'Project Tree', href: '/tree', current: true },
-  { name: 'Resources', href: '/resources', current: false },
-  { name: 'Projects', href: '#', current: false },
-  { name: 'Calendar', href: '#', current: false },
+const routes = [
+  { name: 'Project Tree', href: '/tree' },
+  { name: 'Resources', href: '/resources' },
 ]
 
 export const Menu = () => {
+  const location = useLocation()
+  const navigation = routes.map(r => ({ ...r, current: r.href === location.pathname }))
   return (
     <Disclosure as="nav" className="bg-gray-800">
       {({ open }) => (
@@ -26,10 +27,12 @@ export const Menu = () => {
                 </Disclosure.Button>
               </div>
               <div className="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
-                <div className="flex-shrink-0 flex items-center">
-                  <img className="block lg:hidden h-8 w-auto" src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg" alt="Workflow" />
-                  <img className="hidden lg:block h-8 w-auto" src="https://tailwindui.com/img/logos/workflow-logo-indigo-500-mark-white-text.svg" alt="Workflow" />
-                </div>
+                <a href="/" className="flex">
+                  <div className="flex-shrink-0 flex items-center">
+                    <img className="block lg:hidden h-8 w-auto" src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg" alt="Workflow" />
+                    <img className="hidden lg:block h-8 w-auto" src="https://tailwindui.com/img/logos/workflow-logo-indigo-500-mark-white-text.svg" alt="Workflow" />
+                  </div>
+                </a>
                 <div className="hidden sm:block sm:ml-6">
                   <div className="flex space-x-4">
                     {navigation.map(item => (
@@ -49,13 +52,23 @@ export const Menu = () => {
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+                <a href="/settings">
+                  <button
+                    type="button"
+                    className="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+                  >
+                    <span className="sr-only">Settings</span>
+                    <CogIcon className="h-6 w-6" aria-hidden="true" />
+                  </button>
+                </a>
+
                 {/* Profile dropdown */}
                 <MenuComponent as="div" className="ml-3 relative">
                   <div>
                     <MenuComponent.Button className="bg-gray-800 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
                       <span className="sr-only">Open user menu</span>
                       <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gray-500">
-                        <span className="text-sm font-medium leading-none text-white">TW</span>
+                        <span className="text-sm font-medium leading-none text-white">IN</span>
                       </span>
                     </MenuComponent.Button>
                   </div>
