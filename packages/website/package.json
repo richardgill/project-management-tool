@@ -77,6 +77,8 @@
     "uuidv4": "^6.0.8"
   },
   "devDependencies": {
+    "@headlessui/react": "^1.4.1",
+    "@heroicons/react": "^1.0.4",
     "@types/history": "^4.7.5",
     "@types/jest": "^25.2.1",
     "@types/lodash": "^4.14.150",
